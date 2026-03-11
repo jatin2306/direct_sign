@@ -197,7 +197,7 @@
     @if(isset($banners) && $banners->isNotEmpty())
     <section class="position-relative">
         <div class="relative">
-            werwerwerw  qw  whileqw
+         
             <div class="slider">
                 <div class="slides" style="transform: translateX(0%);">
                     @foreach($banners as $banner)
