@@ -1167,7 +1167,7 @@ document.addEventListener('click', () => {
                 No inflated commissions. No fake listings. Just verified, direct property deals.
             </p>
             <a href="{{ url('properties') }}" class="btn btn-primary me-2 focus-none">Search Verified Properties</a>
-            <a href="{{ route('add.listing') }}" class="btn btn-white border border-success mt-4 mt-md-0" style="color:#26AE61;">
+            <a href="{{ route('add.listing') }}" class="btn btn-white border border-success mt-md-0" style="color:#26AE61;">
                 List Your Property Free
             </a>
         </div>
