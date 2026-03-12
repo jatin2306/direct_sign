@@ -142,6 +142,81 @@
         }
     }
 
+    /* Title & address: wrap to next line on overflow (mobile + web) */
+    .property-details .property-details-inner .property-title,
+    .property-details .property-details-inner .property-title a {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.35;
+    }
+    .property-details .property-details-inner .property-address {
+        white-space: normal !important;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        display: block !important;
+    }
+    .property-details .property-details-inner {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    .property-details .property-details-inner p {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* Mobile: prevent layout breaking and overflow */
+    @media (max-width: 767px) {
+        .space-ptb .container { overflow-x: hidden; max-width: 100%; }
+        .property-item.property-col-list .row { margin-left: 0; margin-right: 0; }
+        .property-item .property-details { min-width: 0; overflow: hidden; }
+        .property-details-inner-box {
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .property-details-inner-box-left { max-width: 100%; min-width: 0; }
+        .property-details-inner .property-title a { display: block; }
+        .property-price-cell,
+        .property-details-inner-box .property-price {
+            width: 100%;
+            flex-basis: 100%;
+            text-align: left !important;
+            margin-top: 6px;
+            white-space: normal;
+            min-width: 0 !important;
+        }
+        .property-details .property-info {
+            flex-wrap: nowrap;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .property-details .property-info li {
+            min-width: 0;
+            flex: 1 1 0;
+            font-size: 12px;
+            padding: 10px 4px 0 !important;
+        }
+        .property-details .property-info li i {
+            display: inline-block;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .property-details .property-details-inner {
+            padding: 14px;
+        }
+        .property-details .container.px-3 {
+            max-width: 100%;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+        }
+        .suggested-properties .property-item .row { margin-left: 0; margin-right: 0; }
+        .py-5.bg-light .container .row { margin-left: 0; margin-right: 0; }
+    }
+
     /* Price filter: one line – min input, dash, max input */
     .price-filter-block {
         margin-top: 0.5rem;
@@ -690,7 +765,7 @@
 
 
                         <div class="row g-0">
-                            <div class="col-lg-4 col-md-5" style="cursor: pointer;">
+                            <div class="col-12 col-md-5 col-lg-4" style="cursor: pointer;">
                                 <div class="property-image bg-overlay-gradient-04">
                                     <img class="img-fluid"
                                         src="{{ $property->pictures->first() ? asset('storage/' . $property->pictures->first()->path) : asset('images/placeholder.jpg') }}"
@@ -712,7 +787,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-8 col-md-7"
+                            <div class="col-12 col-md-7 col-lg-8"
                                 style="cursor: pointer;">
                                 <div class="property-details">
                                     <div class="property-details-inner">
@@ -730,7 +805,7 @@
                                                 {{ number_format($property->price) }} AED
                                             </div>
                                         </div>
-                                        <ul class="property-info list-unstyled d-flex">
+                                        <ul class="property-info list-unstyled d-flex flex-nowrap">
                                             <li class="flex-fill property-bed">
                                                 <i class="fas fa-bed"></i>
                                                 Bed
@@ -795,10 +870,10 @@
                 @endif
                 @else
                 @foreach ($properties as $property)
-                <div class="property-item property-col-list mt-1" data-href="{{ route('property.show', $property->slug ?? $property->id) }}">
+                    <div class="property-item property-col-list mt-1" data-href="{{ route('property.show', $property->slug ?? $property->id) }}">
 
                     <div class="row g-0">
-                        <div class="col-lg-4 col-md-5" style="cursor: pointer;">
+                        <div class="col-12 col-md-5 col-lg-4" style="cursor: pointer;">
                             <div class="property-image bg-overlay-gradient-04">
 
                                 <img class="img-fluid"
@@ -822,28 +897,28 @@
                             </div>
                         </div>
 
-                        <div class="col-lg-8 col-md-7"
+                        <div class="col-12 col-md-7 col-lg-8"
                             data-href="{{ route('property.show', $property->slug ?? $property->id) }}" style="cursor: pointer;">
                             <div class="property-details">
                                 <div class="property-details-inner">
                                     <div class="property-details-inner-box d-flex justify-content-between align-items-start flex-wrap">
-                                        <div class="property-details-inner-box-left" style="max-width: 75%;">
+                                        <div class="property-details-inner-box-left">
                                             <h5 class="property-title">
                                                 <a href="{{ route('property.show', $property->slug ?? $property->id) }}">{{ $property->propertyName }}</a>
                                             </h5>
-                                            <span class="property-address d-block text-truncate">
+                                            <span class="property-address d-block">
                                                 <i class="fas fa-map-marker-alt fa-xs"></i> {{ $property->address }}
                                             </span>
                                             <span class="property-agent-date d-block">
                                                 <i class="far fa-clock fa-md"></i> {{ $property->created_at->diffForHumans() }}
                                             </span>
                                         </div>
-                                        <div class="property-price text-end" style="white-space: nowrap; min-width: 120px;">
+                                        <div class="property-price text-end property-price-cell">
                                             {{ number_format($property->price) }} AED
                                         </div>
                                     </div>
 
-                                    <ul class="property-info list-unstyled d-flex">
+                                    <ul class="property-info list-unstyled d-flex flex-nowrap">
                                         <li class="flex-fill property-bed">
                                             <i class="fas fa-bed"></i>
                                             @if($property->bedrooms == 0)
