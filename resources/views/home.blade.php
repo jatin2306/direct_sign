@@ -184,6 +184,35 @@
   }
 }
 
+/* Mobile: CTA, sections, containers */
+@media (max-width: 768px) {
+  .banner { padding: 80px 0 60px; }
+  .property-search-ui { margin-top: 20px; }
+  .container { padding-left: 16px; padding-right: 16px; }
+  section.py-4.mt-4 .container { padding-left: 16px; padding-right: 16px; }
+  section.py-4.mt-4 h1 { font-size: 20px; line-height: 1.4; }
+  section.py-4.mt-4 p { font-size: 15px; }
+  section.py-4.mt-4 .btn { display: block; width: 100%; margin-bottom: 10px; text-align: center; }
+  section.py-4.mt-4 .btn.me-2 { margin-right: 0 !important; }
+  section.py-4.mt-4 .mt-md-0 { margin-top: 0; }
+  .py-5.bg-white h2 { font-size: 20px; }
+  .py-5.bg-white .col-md-3 { margin-bottom: 16px; }
+  .py-5.bg-white .p-4 { padding: 1rem !important; }
+  section.py-5.mb-5 .row .col-md-4 { margin-bottom: 16px; }
+  section.py-5.mb-5 .p-4 { padding: 1rem !important; }
+  section.py-5 h2.mb-4 { font-size: 22px; line-height: 1.3; }
+  section.py-5 .p-4.rounded.shadow-sm { padding: 1rem !important; }
+  section.py-5 .p-4.rounded.shadow-sm ol { font-size: 15px; padding-left: 1.25rem; }
+  section.py-5 .p-4.rounded.shadow-sm li { margin-bottom: 1rem; }
+  section.py-5 .p-4.rounded.shadow-sm strong { font-size: 16px; }
+  .space-ptb.bg-light .col-lg-4 { margin-bottom: 1rem; }
+  .space-ptb .section-title h2 { font-size: 20px; }
+  .space-ptb .testimonial-content p { font-size: 14px; }
+  .col-md-6.mt-5.mt-md-0 { margin-top: 1.5rem !important; }
+  .whatsapp-float { bottom: 20px; left: 16px; width: 52px; height: 52px; }
+  .whatsapp-icon { width: 30px; height: 30px; }
+}
+
 .btn-outline-secondary:not(:disabled):not(.disabled):active,.btn-outline-secondary:focus {
     background: #fff !important;
     color: #ffffff;
@@ -195,7 +224,7 @@
     <!--=================================
         banner (dynamic, rotate every 5 sec) -->
     @if(isset($banners) && $banners->isNotEmpty())
-    <section class="position-relative">
+    <section class="position-relative home-banner-section">
         <div class="relative">
          
             <div class="slider">
@@ -206,7 +235,8 @@
                         $bannerImgUrl = $banner->image_url ?? '';
                         $bannerDisplayStyle = $banner->image_display_style ?? '';
                     @endphp
-                    <div class="slidee overlay" data-banner-bg="{{ $bannerImgUrl }}" data-banner-style="{{ e($bannerDisplayStyle) }}" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5));">
+                    <div class="slidee overlay" data-banner-style="{{ e($bannerDisplayStyle) }}">
+                        <img class="banner-slide-img" src="{{ $bannerImgUrl }}" alt="">
                         <div class="content content--{{ $placement }}">
                             @if($banner->sub_heading)<p>{{ $banner->sub_heading }}</p>@endif
                             @if($banner->heading)<h3>{{ $banner->heading }}</h3>@endif
@@ -238,30 +268,58 @@
 
     <style>
 
-.slider {
+/* Banner: free size – show image as uploaded (full width, natural height) */
+    .home-banner-section .slider {
       position: relative;
       width: 100%;
-      height: 30dvh;
       overflow: hidden;
-      min-height:300px;
+      max-width: 100%;
     }
 
-    .slides {
+    .home-banner-section .slides {
       display: flex;
       transition: transform 0.6s ease-in-out;
-      height: 100%;
     }
 
-    .slidee {
+    .home-banner-section .slidee {
       min-width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: 70% center;
+      width: 100%;
+      flex-shrink: 0;
       position: relative;
+      display: block;
+    }
+
+    .home-banner-section .slidee .banner-slide-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      vertical-align: top;
+    }
+
+    .home-banner-section .slidee .content {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
       display: flex;
-      align-items: center;
-    /* border-radius: 20px; */
-      /* padding: 40px; */
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .home-banner-section .slidee.overlay::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5));
+      pointer-events: none;
+    }
+
+    .home-banner-section .slidee .content {
+      z-index: 1;
     }
 .slidee .img {
     padding: 30px 80px 0 0;
@@ -288,7 +346,7 @@
       transition: opacity 0.25s ease, background 0.2s ease;
       pointer-events: none;
     }
-    .slider:hover .banner-arrow { opacity: 1; pointer-events: auto; }
+    .home-banner-section:hover .banner-arrow { opacity: 1; pointer-events: auto; }
     .banner-arrow:hover { background: #fff; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); }
     .banner-arrow.banner-arrow--hidden { display: none !important; }
     .banner-prev { left: 16px; }
@@ -319,28 +377,15 @@
         position: relative;
     }
 
-    .slider {
-      position: relative;
-      width: 100%;
-      height: 30dvh;
-      overflow: hidden;
-      min-height:400px;
-    }
-
-    .slides {
-      display: flex;
-      transition: transform 0.6s ease-in-out;
-      height: 100%;
-    }
-
     .content {
       padding: 20px;
       color: #fff;
-      /* max-width: 500px; */
+      max-width: 100%;
+      box-sizing: border-box;
     }
-    .content--left { margin-left: 100px; margin-right: auto; text-align: left; }
-    .content--center { margin-left: auto; margin-right: auto; text-align: center; }
-    .content--right { margin-left: auto; margin-right: 100px; text-align: right; }
+    .content--left { margin-left: 100px; margin-right: auto; text-align: left; align-items: flex-start; }
+    .content--center { margin-left: auto; margin-right: auto; text-align: center; align-items: center; }
+    .content--right { margin-left: auto; margin-right: 100px; text-align: right; align-items: flex-end; }
 
     .content h3 {
       font-size: 35px;
@@ -357,6 +402,8 @@
 
     .content .btn {
         display: inline-block;
+        width: auto;
+        max-width: 100%;
         background: #26AE61;
         color: #fff;
         padding: 12px 20px;
@@ -364,6 +411,8 @@
         font-weight: 400;
         text-decoration: none;
         font-size: 14px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 .content .freecard{display: block; font-size: 11px; line-height: 2;font-weight: bold;}
 
@@ -390,34 +439,47 @@
         position: relative;
     }
 
-    /* Responsive */
+    /* Responsive: banner and general mobile */
     @media (max-width: 768px) {
-
-.clientMob{display: block;}
-
-      .slider { min-height: 220px; }
-      .content h3 { font-size: 18px; }
-      .content p { font-size: 12px; line-height: 16px; }
-      .content .btn { padding: 8px 12px; font-size: 12px; }
-      h1 { font-size: 25px; }
-      h2 { font-size: 15px; }
-      .content { margin-left: 0; }
-      .content--right { margin-right: 0; }
+      .clientMob { display: block; }
+      .home-banner-section .slidee .content { padding: 16px; margin-left: 0 !important; margin-right: 0 !important; max-width: 100%; z-index: 1; }
+      .home-banner-section .slidee .content--left,
+      .home-banner-section .slidee .content--center,
+      .home-banner-section .slidee .content--right { margin-left: 16px !important; margin-right: 16px !important; }
+      .home-banner-section .slidee .content h3 { font-size: 18px; line-height: 1.3; margin-bottom: 8px; }
+      .home-banner-section .slidee .content p { font-size: 12px; line-height: 1.4; }
+      /* Banner CTA button: override inline top, fix sizing and touch target on mobile */
+      .home-banner-section .slidee .content .btn {
+        position: relative !important;
+        top: 0 !important;
+        margin-top: 12px;
+        padding: 12px 20px;
+        font-size: 14px;
+        min-height: 44px;
+        min-width: 120px;
+        max-width: 100%;
+        width: auto;
+        box-sizing: border-box;
+        white-space: normal;
+        word-break: break-word;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.3;
+      }
       .banner-arrow { display: none !important; }
-      .content { max-width: 250px; z-index: 1;}
-      .slidee { height: 200px; position: relative; }
-.slidee .img{  padding: 20px 00px 0 0;}
-.slidee:before {
-    content: "";
-    background: #00000045;
-    height: 100%;
-    width: 100%;
-    position: absolute;
-}
- .model-img img {
-        max-height: auto !important;
-        height: auto !important;
-    }
+      .slidee .img { padding: 20px 0 0 0; }
+      .slidee::before {
+        content: "";
+        background: rgba(0,0,0,0.35);
+        height: 100%;
+        width: 100%;
+        position: absolute;
+      }
+      .model-img img { max-height: auto !important; height: auto !important; }
+      h1 { font-size: 22px; line-height: 1.35; }
+      h2 { font-size: 18px; line-height: 1.35; }
     }
 
 
@@ -433,20 +495,39 @@
 
   if (!slideItems1.length) return;
 
-  // Set banner background images from data attribute (avoids Blade in style for linter)
-  document.querySelectorAll('.slidee[data-banner-bg]').forEach(function(el) {
-    var url = el.getAttribute('data-banner-bg');
-    if (url) {
-      el.style.backgroundImage = 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(\'' + url.replace(/'/g, '\\\'') + '\')';
-    }
+  // Optional: apply image_display_style from admin (e.g. object-position) to img
+  document.querySelectorAll('.slidee[data-banner-style]').forEach(function(el) {
     var style = el.getAttribute('data-banner-style');
-    if (style) {
+    var img = el.querySelector('.banner-slide-img');
+    if (style && img) {
       style.split(';').forEach(function(part) {
         var m = part.trim().match(/^\s*([\w-]+)\s*:\s*(.+)$/);
-        if (m) el.style.setProperty(m[1].trim(), m[2].trim());
+        if (m) img.style.setProperty(m[1].trim(), m[2].trim());
       });
     }
   });
+
+  function setSliderHeight() {
+    var slider = document.querySelector('.home-banner-section .slider');
+    var slides = document.querySelector('.home-banner-section .slides');
+    if (!slider || !slides) return;
+    var index = Math.abs(parseInt(slides.style.transform.replace(/[^0-9-]/g, ''), 10) / 100) || 0;
+    var slide = slideItems1[index];
+    if (slide) {
+      var h = slide.offsetHeight;
+      slider.style.height = h + 'px';
+    }
+  }
+
+  if (sliderTrack1 && slideItems1[0]) {
+    var firstImg = slideItems1[0].querySelector('.banner-slide-img');
+    if (firstImg) {
+      firstImg.addEventListener('load', setSliderHeight);
+      if (firstImg.complete) setSliderHeight();
+      else setSliderHeight();
+      setTimeout(setSliderHeight, 100);
+    }
+  }
 
   let currentIndex1 = 0;
   let dragStartX1 = 0;
@@ -484,6 +565,7 @@
       dot1.classList.toggle('active', i1 === currentIndex1);
     });
     updateBannerArrows();
+    setSliderHeight();
   }
 
   if (buttonPrev1) buttonPrev1.addEventListener('click', function() { showSlideAt1(currentIndex1 - 1); });
@@ -645,31 +727,51 @@
 @media (max-width: 768px) {
     .search-row {
         flex-direction: column;
+        gap: 12px;
     }
-    .dropdown-outer{
+    .search-toggle-wrapper {
         width: 100%;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .toggle-btn {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    .dropdown-outer {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
     }
     .search-input {
         width: 100%;
     }
-
+    .seaarch-pill-outer {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
     .search-pill {
-        width: calc(50vw - 40px);
+        flex: 1 1 100%;
+        min-width: 0;
     }
-
-    .search-pill select {
-        width: 100%;
-    }
-
-    .custom-dropdown.bed{
-        min-width: 140px;
-    }
-    .custom-dropdown.cat{
-        width: 100%;
-    }
-    .search-pill input{
+    .search-pill select,
+    .search-pill input {
         width: 100% !important;
+    }
+    .custom-dropdown.bed,
+    .custom-dropdown.cat {
+        width: 100%;
+        min-width: 0;
+    }
+    .search-card {
+        padding: 16px;
+    }
+    .search-action button {
+        width: 100%;
+        padding: 12px 20px;
     }
 }
 
@@ -1334,6 +1436,51 @@ document.addEventListener('click', () => {
     @endif
     @endforeach
     @endif
+
+    <!--=================================
+    Projects by developers in the UAE -->
+    <!-- @if(isset($developers) && count($developers) > 0)
+    <section class="space-pb developers-section-block">
+        <div class="container">
+            <div class="row align-items-center mb-4">
+                <div class="col-12">
+                    <h2 class="mb-0 section-title">Projects by developers in the UAE</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 position-relative developers-swiper-wrap">
+                    <div class="swiper developers-section-swiper">
+                        <div class="swiper-wrapper">
+                            @foreach($developers as $dev)
+                            <div class="swiper-slide">
+                                <a href="{{ url('properties') }}?location={{ urlencode($dev['name']) }}" class="text-decoration-none text-dark">
+                                    <div class="developer-card rounded-3 shadow-sm border border-light h-100">
+                                        <div class="developer-card-logo {{ $dev['logo_dark'] ? 'developer-card-logo--dark' : '' }}">
+                                            <span class="developer-logo-text">{{ $dev['logo_text'] }}</span>
+                                        </div>
+                                        <div class="developer-card-info">
+                                            <div class="developer-name">{{ $dev['name'] }}</div>
+                                            <div class="developer-projects text-muted">{{ $dev['projects'] }} projects</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="swiper-pagination developers-section-pagination"></div>
+                    </div>
+                    <div class="swiper-button-prev developers-swiper-prev"></div>
+                    <div class="swiper-button-next developers-swiper-next"></div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="{{ url('properties') }}" class="btn developers-cta-btn">All developers in UAE</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    @endif -->
 
     <!--=================================
 Featured Properties-->
@@ -2142,8 +2289,12 @@ document.addEventListener('click', function(e) {
 @push('scripts')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <style>
-.featured-section-block .featured-section-swiper-wrap { padding: 0; }
+.featured-section-block .featured-section-swiper-wrap { padding: 0; overflow: hidden; }
 .featured-section-block .featured-section-swiper { padding: 0 0 48px; position: relative; }
+@media (max-width: 768px) {
+  .featured-section-block .featured-section-swiper-wrap { padding: 0 0 40px; }
+  .featured-section-block .section-title h2 { font-size: 20px; }
+}
 /* Dots at bottom – green theme */
 .featured-section-block .featured-section-pagination {
     position: absolute; bottom: 0; left: 0; width: 100%;
@@ -2165,6 +2316,70 @@ document.addEventListener('click', function(e) {
 /* Location: single line ellipsis so card height stays consistent */
 .featured-section-block .featured-card-address { min-height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .featured-section-block .featured-card-address span { display: inline; }
+
+/* Developers section – card design (logo + name + projects) */
+.developers-section-block .section-title { color: #333; font-weight: 700; }
+.developers-swiper-wrap { padding: 0; position: relative; }
+.developers-section-block .developers-section-swiper { padding-bottom: 52px; position: relative; }
+.developer-card { background: #fff; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.2s; }
+.developer-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+.developer-card-logo {
+    min-height: 100px; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+    background: #fff; border-bottom: 1px solid #f0f0f0;
+}
+.developer-logo-text { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; color: #333; }
+.developer-card-logo--dark { background: #1e3a5f !important; border-bottom-color: #1e3a5f; }
+.developer-card-logo--dark .developer-logo-text { color: #fff; }
+.developer-card-info { padding: 16px; flex: 1; }
+.developer-name { font-weight: 600; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
+.developer-projects { font-size: 0.85rem; color: #6c757d; }
+.developers-cta-btn {
+    background: #eef0f7; color: #4A225B; border: none; padding: 10px 24px; border-radius: 8px;
+    font-weight: 600; text-decoration: none; display: inline-block; transition: background 0.2s, color 0.2s;
+}
+.developers-cta-btn:hover { background: #4A225B; color: #fff; }
+/* Developers carousel arrows – same as banner carousel */
+.developers-section-block .swiper-button-prev,
+.developers-section-block .swiper-button-next {
+    width: 44px; height: 44px; margin-top: 0;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    --swiper-navigation-size: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.developers-section-block .swiper-button-prev { left: 16px; right: auto; }
+.developers-section-block .swiper-button-next { right: 16px; left: auto; }
+.developers-section-block .swiper-button-prev::after,
+.developers-section-block .swiper-button-next::after { font-size: 18px; font-weight: 700; }
+.developers-section-block .swiper-button-prev:hover,
+.developers-section-block .swiper-button-next:hover {
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+/* Developers dots – below cards with gap, not overlaid */
+.developers-section-block .developers-section-pagination {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    text-align: center; padding-top: 20px; margin-top: 0;
+    pointer-events: none;
+}
+.developers-section-block .developers-section-pagination .swiper-pagination-bullet {
+    pointer-events: auto;
+    width: 10px; height: 10px; background: #dee2e6; opacity: 1;
+    transition: background 0.2s, transform 0.2s;
+}
+.developers-section-block .developers-section-pagination .swiper-pagination-bullet-active {
+    background: #26ae61; transform: scale(1.2);
+}
+@media (max-width: 768px) {
+    .developers-section-block .developers-section-swiper { padding-bottom: 48px; }
+    .developer-card-logo { min-height: 80px; padding: 16px; }
+    .developer-logo-text { font-size: 1rem; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
@@ -2185,6 +2400,26 @@ document.addEventListener('click', function(e) {
                 breakpoints: {
                     576: { slidesPerView: 2.2 },
                     992: { slidesPerView: 3.3 }
+                }
+            });
+        });
+        document.querySelectorAll('.developers-section-swiper').forEach(function(el) {
+            if (el.swiper) return;
+            var wrap = el.closest('.developers-swiper-wrap');
+            new Swiper(el, {
+                slidesPerView: 1.5,
+                spaceBetween: 16,
+                loop: true,
+                autoplay: { delay: 4000, disableOnInteraction: false },
+                pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
+                navigation: {
+                    nextEl: wrap ? wrap.querySelector('.swiper-button-next') : null,
+                    prevEl: wrap ? wrap.querySelector('.swiper-button-prev') : null
+                },
+                breakpoints: {
+                    576: { slidesPerView: 2.5 },
+                    768: { slidesPerView: 3.5 },
+                    992: { slidesPerView: 4.5 }
                 }
             });
         });

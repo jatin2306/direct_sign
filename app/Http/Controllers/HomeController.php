@@ -89,6 +89,16 @@ class HomeController extends Controller
         $propertyCounts[$loc] = Property::where('address', 'LIKE', '%' . $loc . '%')->count();
     }
 
+    // Developers section for homepage carousel (static list; extend later with DB if needed)
+    $developers = [
+        ['name' => 'Emaar Properties', 'logo_text' => 'EMAAR', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Emaar%')->count() ?: 217],
+        ['name' => 'Azizi Developments', 'logo_text' => 'AZIZI', 'logo_dark' => true, 'projects' => Property::where('address', 'LIKE', '%Azizi%')->count() ?: 112],
+        ['name' => 'Aldar Properties PJSC', 'logo_text' => 'ALDAR', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Aldar%')->count() ?: 97],
+        ['name' => 'Damac Properties', 'logo_text' => 'DAMAC', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Damac%')->count() ?: 80],
+        ['name' => 'Sobha Realty', 'logo_text' => 'SOBHA', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Sobha%')->count() ?: 78],
+        ['name' => 'Nakheel', 'logo_text' => 'NAKHEEL', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Nakheel%')->count() ?: 65],
+    ];
+
     // Fetch the available bedroom and bathroom options
     $bedroomOptions = range(1, 10); // Or dynamically fetch based on your data
     $bathroomOptions = range(1, 10); // Same for bathrooms
@@ -97,6 +107,7 @@ class HomeController extends Controller
         'banners' => $banners,
         'featuredProperties' => $featuredProperties,
         'featuredSections' => $featuredSections,
+        'developers' => $developers,
         'properties' => $properties,
         'location' => $location,
         'propertyCounts' => $propertyCounts,

@@ -55,23 +55,23 @@
                 </div>
                 <div class="col-12">
                     <label for="banner-create-image" class="form-label">Image <span class="text-danger">*</span></label>
-                    <input type="file" class="form-control {{ $errors->has('image') ? 'is-invalid' : '' }}" id="banner-create-image" name="image" accept="image/*" required>
+                    <div id="banner-create-dropzone" class="banner-dropzone {{ $errors->has('image') ? 'is-invalid' : '' }}">
+                        <input type="file" class="d-none {{ $errors->has('image') ? 'is-invalid' : '' }}" id="banner-create-image" name="image" accept="image/*" required>
+                        <div class="banner-dropzone-inner">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                            <p class="mb-1 fw-medium">Drag and drop your image here</p>
+                            <p class="mb-0 small text-muted">or <span class="text-primary">browse</span> to choose a file</p>
+                        </div>
+                    </div>
                     <div id="banner-create-size-error" class="invalid-feedback d-block text-danger" style="display: none;"></div>
                     @error('image') <div class="invalid-feedback d-block text-danger">{{ $message }}</div> @enderror
-                    <small class="text-muted">Image must be <strong>exactly 1280 × 400 px</strong>. JPEG, PNG, GIF, WebP. Max 5MB. After choosing a file, use the preview below to crop and zoom.</small>
+                    <small class="text-muted d-block mt-1">Image must be <strong>exactly 1280 × 400 px</strong>. JPEG, PNG, GIF, WebP. Max 5MB.</small>
                 </div>
                 <div class="col-12" id="banner-create-preview-wrap" style="display: none;">
-                    <label class="form-label">Preview &amp; adjust</label>
-                    <p class="text-muted small">Crop by dragging the corners, zoom with buttons, drag image to position left/right.</p>
-                    <div id="banner-create-cropper-container" class="border rounded bg-dark position-relative overflow-hidden" style="height: 280px; width: 100%; min-height: 280px;">
-                        <img id="banner-create-preview-img" src="" alt="" style="display: block; max-width: none;">
+                    <label class="form-label">Preview</label>
+                    <div class="border rounded overflow-hidden bg-light text-center" style="max-height: 320px;">
+                        <img id="banner-create-preview-img" src="" alt="" class="img-fluid" style="max-height: 300px; width: auto;">
                     </div>
-                    <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="banner-create-zoom-out" title="Zoom out">− Zoom out</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="banner-create-zoom-in" title="Zoom in">+ Zoom in</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="banner-create-reset" title="Reset">Reset</button>
-                    </div>
-                    <input type="hidden" name="image_display" id="image_display" value="">
                 </div>
                 <div class="col-md-4">
                     <label for="sort_order" class="form-label">Sort order</label>
@@ -93,85 +93,73 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
 <style>
-#banner-create-preview-wrap .cropper-view-box, #banner-create-preview-wrap .cropper-face { border-radius: 0; }
-#banner-create-preview-wrap .cropper-container { height: 280px !important; }
-#banner-create-cropper-container img { max-width: none; }
+#banner-create-preview-wrap .img-fluid { display: block; margin: 0 auto; }
+.banner-dropzone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 28px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.banner-dropzone:hover,
+.banner-dropzone.drag-over { border-color: #26ae61; background: #e9f7f0; }
+.banner-dropzone.is-invalid { border-color: #dc3545; }
+.banner-dropzone-inner { pointer-events: none; }
 </style>
 @endpush
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <script>
 (function() {
     document.addEventListener('DOMContentLoaded', function() {
         var fileInput = document.getElementById('banner-create-image');
         var wrap = document.getElementById('banner-create-preview-wrap');
         var previewImg = document.getElementById('banner-create-preview-img');
-        var hiddenInput = document.getElementById('image_display');
-        var zoomInBtn = document.getElementById('banner-create-zoom-in');
-        var zoomOutBtn = document.getElementById('banner-create-zoom-out');
-        var resetBtn = document.getElementById('banner-create-reset');
-
-        if (!fileInput || !wrap || !previewImg || typeof Cropper === 'undefined') return;
-
-        function captureAndStore() {
-            var cropper = wrap.cropperInstance;
-            if (!cropper) return;
-            var data = cropper.getData();
-            var imgData = cropper.getImageData();
-            if (!imgData || !imgData.naturalWidth) return;
-            var natW = imgData.naturalWidth, natH = imgData.naturalHeight;
-            var payload = {
-                crop: {
-                    x: Math.round((data.x / natW) * 10000) / 100,
-                    y: Math.round((data.y / natH) * 10000) / 100,
-                    w: Math.round((data.width / natW) * 10000) / 100,
-                    h: Math.round((data.height / natH) * 10000) / 100
-                }
-            };
-            hiddenInput.value = JSON.stringify(payload);
-        }
-
-        function initCropperOnCreate() {
-            if (wrap.cropperInstance) {
-                wrap.cropperInstance.destroy();
-                wrap.cropperInstance = null;
-            }
-            if (!previewImg.src || !previewImg.complete) return;
-            wrap.cropperInstance = new Cropper(previewImg, {
-                viewMode: 1,
-                dragMode: 'move',
-                aspectRatio: 1920 / 500,
-                autoCropArea: 1,
-                restore: false,
-                guides: true,
-                center: true,
-                highlight: false,
-                cropBoxResizable: true,
-                cropBoxMovable: true,
-                toggleDragModeOnDblclick: false
-            });
-            wrap.cropperInstance.cropper.addEventListener('cropend', captureAndStore);
-            captureAndStore();
-        }
-
-        var requiredWidth = 1280, requiredHeight = 400;
         var sizeErrorEl = document.getElementById('banner-create-size-error');
+        var requiredWidth = 1280, requiredHeight = 400;
+
+        if (!fileInput || !wrap || !previewImg) return;
+
+        var dropzone = document.getElementById('banner-create-dropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', function() { fileInput.click(); });
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('drag-over');
+            });
+            dropzone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('drag-over');
+            });
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('drag-over');
+                var files = e.dataTransfer && e.dataTransfer.files;
+                if (files && files.length && files[0].type.match('image.*')) {
+                    var dt = new DataTransfer();
+                    dt.items.add(files[0]);
+                    fileInput.files = dt.files;
+                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
 
         fileInput.addEventListener('change', function() {
             var file = this.files[0];
             if (sizeErrorEl) { sizeErrorEl.style.display = 'none'; sizeErrorEl.textContent = ''; }
-            if (!file || !file.type.match('image.*')) return;
-            if (wrap.cropperInstance) {
-                wrap.cropperInstance.destroy();
-                wrap.cropperInstance = null;
+            if (!file || !file.type.match('image.*')) {
+                wrap.style.display = 'none';
+                previewImg.src = '';
+                return;
             }
-            wrap.style.display = 'block';
             var reader = new FileReader();
             reader.onload = function(e) {
-                var dataUrl = e.target.result;
-                var done = function() {
+                previewImg.onload = function() {
                     var w = previewImg.naturalWidth, h = previewImg.naturalHeight;
                     if (w !== requiredWidth || h !== requiredHeight) {
                         if (sizeErrorEl) {
@@ -185,33 +173,12 @@
                         return;
                     }
                     fileInput.classList.remove('is-invalid');
-                    setTimeout(function() {
-                        initCropperOnCreate();
-                    }, 50);
+                    wrap.style.display = 'block';
                 };
-                previewImg.onload = done;
-                previewImg.src = dataUrl;
-                if (previewImg.complete) done();
+                previewImg.src = e.target.result;
+                if (previewImg.complete) previewImg.onload();
             };
             reader.readAsDataURL(file);
-        });
-
-        if (zoomInBtn) zoomInBtn.addEventListener('click', function() {
-            var c = wrap.cropperInstance;
-            if (c) { c.zoom(0.1); captureAndStore(); }
-        });
-        if (zoomOutBtn) zoomOutBtn.addEventListener('click', function() {
-            var c = wrap.cropperInstance;
-            if (c) { c.zoom(-0.1); captureAndStore(); }
-        });
-        if (resetBtn) resetBtn.addEventListener('click', function() {
-            var c = wrap.cropperInstance;
-            if (c) { c.reset(); captureAndStore(); }
-        });
-
-        var bannerForm = document.querySelector('form[action*="banners"]');
-        if (bannerForm) bannerForm.addEventListener('submit', function() {
-            captureAndStore();
         });
     });
 })();
