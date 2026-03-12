@@ -25,10 +25,11 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
+                        <th>Type</th>
                         <th>Title</th>
                         <th>Heading</th>
                         <th>Placement</th>
-                        <th>Properties</th>
+                        <th>Items</th>
                         <th>Order</th>
                         <th>Status</th>
                         @if($showCarouselActions)<th>Actions</th>@endif
@@ -38,10 +39,27 @@
                     @forelse($sections as $index => $section)
                         <tr>
                             <td>{{ $index + 1 }}</td>
+                            <td>
+                                @if(($section->type ?? 'properties') === 'image_carousel')
+                                    <span class="badge bg-secondary">Image</span>
+                                @elseif(($section->type ?? 'properties') === 'developers')
+                                    <span class="badge bg-secondary">Developers</span>
+                                @else
+                                    <span class="badge bg-primary">Properties</span>
+                                @endif
+                            </td>
                             <td>{{ $section->title }}</td>
                             <td>{{ Str::limit($section->heading, 40) ?: '—' }}</td>
-                            <td><span class="badge bg-info text-capitalize">{{ $section->heading_placement }}</span></td>
-                            <td>{{ $section->properties_count }}</td>
+                            <td><span class="badge bg-info text-capitalize">{{ $section->heading_placement ?? '—' }}</span></td>
+                            <td>
+                                @if(($section->type ?? 'properties') === 'image_carousel')
+                                    {{ $section->images_count ?? 0 }} images
+                                @elseif(($section->type ?? 'properties') === 'developers')
+                                    {{ $section->developers_count ?? 0 }} developers
+                                @else
+                                    {{ $section->properties_count }}
+                                @endif
+                            </td>
                             <td>{{ $section->sort_order }}</td>
                             <td>
                                 @if($section->is_active)
@@ -67,7 +85,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $showCarouselActions ? 8 : 7 }}" class="text-center text-muted py-4">No carousels yet.@if(admin_can('carousels.create')) <a href="{{ route('admin.featured-sections.create') }}">Add one</a>@endif</td>
+                            <td colspan="{{ $showCarouselActions ? 9 : 8 }}" class="text-center text-muted py-4">No carousels yet.@if(admin_can('carousels.create')) <a href="{{ route('admin.featured-sections.create') }}">Add one</a>@endif</td>
                         </tr>
                     @endforelse
                 </tbody>

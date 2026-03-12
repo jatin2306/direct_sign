@@ -1438,13 +1438,13 @@ document.addEventListener('click', () => {
     @endif
 
     <!--=================================
-    Projects by developers in the UAE -->
-    <!-- @if(isset($developers) && count($developers) > 0)
+    Developers carousel (from Add Carousel → Section type: Developers carousel) -->
+    @if(isset($developers) && $developers->isNotEmpty())
     <section class="space-pb developers-section-block">
         <div class="container">
             <div class="row align-items-center mb-4">
                 <div class="col-12">
-                    <h2 class="mb-0 section-title">Projects by developers in the UAE</h2>
+                    <h2 class="mb-0 section-title">{{ isset($developersSection) && $developersSection->title ? $developersSection->title : 'Projects by developers in the UAE' }}</h2>
                 </div>
             </div>
             <div class="row">
@@ -1453,14 +1453,14 @@ document.addEventListener('click', () => {
                         <div class="swiper-wrapper">
                             @foreach($developers as $dev)
                             <div class="swiper-slide">
-                                <a href="{{ url('properties') }}?location={{ urlencode($dev['name']) }}" class="text-decoration-none text-dark">
+                                <a href="{{ url('properties') }}?location={{ urlencode($dev->name) }}" class="text-decoration-none text-dark">
                                     <div class="developer-card rounded-3 shadow-sm border border-light h-100">
-                                        <div class="developer-card-logo {{ $dev['logo_dark'] ? 'developer-card-logo--dark' : '' }}">
-                                            <span class="developer-logo-text">{{ $dev['logo_text'] }}</span>
+                                        <div class="developer-card-logo {{ $dev->logo_dark ? 'developer-card-logo--dark' : '' }}">
+                                            <span class="developer-logo-text">{{ $dev->logo_text }}</span>
                                         </div>
                                         <div class="developer-card-info">
-                                            <div class="developer-name">{{ $dev['name'] }}</div>
-                                            <div class="developer-projects text-muted">{{ $dev['projects'] }} projects</div>
+                                            <div class="developer-name">{{ $dev->name }}</div>
+                                            <div class="developer-projects text-muted">{{ $dev->projects }} projects</div>
                                         </div>
                                     </div>
                                 </a>
@@ -1480,7 +1480,60 @@ document.addEventListener('click', () => {
             </div>
         </div>
     </section>
-    @endif -->
+    @endif
+
+    <!--=================================
+    Image carousel (matches developers carousel design: card with image top, text bottom) -->
+    @if(isset($imageCarouselSection) && $imageCarouselSection->images->isNotEmpty())
+    <section class="space-pb image-carousel-section-block">
+        <div class="container">
+            <div class="row align-items-center mb-4">
+                <div class="col-12">
+                    <h2 class="mb-0 section-title image-carousel-heading image-carousel-heading--{{ $imageCarouselSection->heading_placement ?? 'left' }}">{{ $imageCarouselSection->title }}</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 position-relative image-carousel-swiper-wrap">
+                    <div class="swiper image-carousel-swiper">
+                        <div class="swiper-wrapper">
+                            @foreach($imageCarouselSection->images as $slide)
+                            <div class="swiper-slide">
+                                @if(!empty($slide->cta_url))
+                                    <a href="{{ $slide->cta_url }}" class="text-decoration-none text-dark d-block h-100" target="_blank" rel="noopener">
+                                @endif
+                                <div class="image-carousel-card rounded-3 shadow-sm border border-light h-100">
+                                    <div class="image-carousel-card-image" style="background-color: {{ e($slide->background_color ?? '#ffffff') }};">
+                                        <img src="{{ asset('storage/' . $slide->image_path) }}" alt="{{ $slide->heading ?? '' }}" class="image-carousel-card-img">
+                                    </div>
+                                    @if(!empty($slide->heading) || !empty($slide->second_heading))
+                                    <div class="image-carousel-card-info">
+                                        @if($slide->heading_order == 2 && !empty($slide->second_heading))
+                                            <div class="image-carousel-card-secondary text-muted">{{ $slide->second_heading }}</div>
+                                        @endif
+                                        @if(!empty($slide->heading))
+                                            <div class="image-carousel-card-title">{{ $slide->heading }}</div>
+                                        @endif
+                                        @if($slide->heading_order == 1 && !empty($slide->second_heading))
+                                            <div class="image-carousel-card-secondary text-muted">{{ $slide->second_heading }}</div>
+                                        @endif
+                                    </div>
+                                    @endif
+                                </div>
+                                @if(!empty($slide->cta_url))
+                                    </a>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="swiper-pagination image-carousel-pagination"></div>
+                    </div>
+                    <div class="swiper-button-prev image-carousel-prev"></div>
+                    <div class="swiper-button-next image-carousel-next"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    @endif
 
     <!--=================================
 Featured Properties-->
@@ -2380,6 +2433,86 @@ document.addEventListener('click', function(e) {
     .developer-card-logo { min-height: 80px; padding: 16px; }
     .developer-logo-text { font-size: 1rem; }
 }
+
+/* Image carousel section – match developers carousel (card: image top, text bottom) */
+.image-carousel-section-block .section-title { color: #333; font-weight: 700; }
+.image-carousel-section-block .image-carousel-heading--left { text-align: left; }
+.image-carousel-section-block .image-carousel-heading--center { text-align: center; }
+.image-carousel-section-block .image-carousel-heading--right { text-align: right; }
+.image-carousel-swiper-wrap { padding: 0; position: relative; }
+.image-carousel-section-block .image-carousel-swiper { padding-bottom: 52px; position: relative; }
+.image-carousel-card {
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s;
+}
+.image-carousel-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+.image-carousel-card-image {
+    min-height: 100px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    overflow: hidden;
+}
+.image-carousel-card-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+}
+.image-carousel-card-info { padding: 16px; flex: 1; }
+.image-carousel-card-title { font-weight: 600; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
+.image-carousel-card-secondary { font-size: 0.85rem; color: #6c757d; }
+.image-carousel-section-block .swiper-button-prev,
+.image-carousel-section-block .swiper-button-next {
+    width: 44px; height: 44px; margin-top: 0;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    --swiper-navigation-size: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.image-carousel-section-block .swiper-button-prev { left: 16px; right: auto; }
+.image-carousel-section-block .swiper-button-next { right: 16px; left: auto; }
+.image-carousel-section-block .swiper-button-prev::after,
+.image-carousel-section-block .swiper-button-next::after { font-size: 18px; font-weight: 700; }
+.image-carousel-section-block .swiper-button-prev:hover,
+.image-carousel-section-block .swiper-button-next:hover {
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.image-carousel-section-block .image-carousel-pagination {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    text-align: center; padding-top: 20px; margin-top: 0;
+    pointer-events: none;
+}
+.image-carousel-section-block .image-carousel-pagination .swiper-pagination-bullet {
+    pointer-events: auto;
+    width: 10px; height: 10px; background: #dee2e6; opacity: 1;
+    transition: background 0.2s, transform 0.2s;
+}
+.image-carousel-section-block .image-carousel-pagination .swiper-pagination-bullet-active {
+    background: #26ae61; transform: scale(1.2);
+}
+@media (max-width: 768px) {
+    .image-carousel-section-block .image-carousel-swiper { padding-bottom: 48px; }
+    .image-carousel-card-image { min-height: 80px; height: 120px; }
+    .image-carousel-card-info { padding: 12px; }
+    .image-carousel-card-title { font-size: 0.9rem; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
@@ -2420,6 +2553,26 @@ document.addEventListener('click', function(e) {
                     576: { slidesPerView: 2.5 },
                     768: { slidesPerView: 3.5 },
                     992: { slidesPerView: 4.5 }
+                }
+            });
+        });
+        document.querySelectorAll('.image-carousel-swiper').forEach(function(el) {
+            if (el.swiper) return;
+            var wrap = el.closest('.image-carousel-swiper-wrap');
+            new Swiper(el, {
+                slidesPerView: 1.2,
+                spaceBetween: 16,
+                loop: true,
+                autoplay: { delay: 4500, disableOnInteraction: false },
+                pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
+                navigation: {
+                    nextEl: wrap ? wrap.querySelector('.swiper-button-next') : null,
+                    prevEl: wrap ? wrap.querySelector('.swiper-button-prev') : null
+                },
+                breakpoints: {
+                    576: { slidesPerView: 2 },
+                    768: { slidesPerView: 2.5 },
+                    992: { slidesPerView: 3.5 }
                 }
             });
         });

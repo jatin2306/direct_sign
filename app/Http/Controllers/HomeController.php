@@ -23,14 +23,48 @@ class HomeController extends Controller
         ->take(5)
         ->get();
 
-    // Admin-configured featured sections (title, heading, placement, multiple properties)
+    // Admin-configured featured sections: property carousels only (developers carousel is separate)
     $featuredSections = FeaturedSection::where('is_active', true)
+        ->where(function ($q) {
+            $q->where('type', 'properties')->orWhereNull('type');
+        })
         ->with(['properties' => function ($q) {
             $q->with(['pictures', 'childTypeRelation']);
         }])
         ->orderBy('sort_order')
         ->orderBy('id')
         ->get();
+
+    // Developers carousel: first active featured section of type "developers" (same Add Carousel form)
+    $developersSection = FeaturedSection::where('is_active', true)
+        ->where('type', 'developers')
+        ->with('developers')
+        ->orderBy('sort_order')
+        ->orderBy('id')
+        ->first();
+    $developers = collect();
+    if ($developersSection && $developersSection->developers->isNotEmpty()) {
+        $developers = $developersSection->developers->map(function ($d) {
+            $projects = 0;
+            if (! empty($d->search_slug)) {
+                $projects = Property::where('address', 'LIKE', '%' . $d->search_slug . '%')->count();
+            }
+            return (object) [
+                'name'      => $d->name,
+                'logo_text' => $d->logo_text ?: strtoupper(explode(' ', trim($d->name))[0] ?? ''),
+                'logo_dark' => $d->logo_dark,
+                'projects'  => $projects,
+            ];
+        });
+    }
+
+    // Image carousel: first active featured section of type "image_carousel"
+    $imageCarouselSection = FeaturedSection::where('is_active', true)
+        ->where('type', 'image_carousel')
+        ->with('images')
+        ->orderBy('sort_order')
+        ->orderBy('id')
+        ->first();
 
 
 
@@ -89,16 +123,6 @@ class HomeController extends Controller
         $propertyCounts[$loc] = Property::where('address', 'LIKE', '%' . $loc . '%')->count();
     }
 
-    // Developers section for homepage carousel (static list; extend later with DB if needed)
-    $developers = [
-        ['name' => 'Emaar Properties', 'logo_text' => 'EMAAR', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Emaar%')->count() ?: 217],
-        ['name' => 'Azizi Developments', 'logo_text' => 'AZIZI', 'logo_dark' => true, 'projects' => Property::where('address', 'LIKE', '%Azizi%')->count() ?: 112],
-        ['name' => 'Aldar Properties PJSC', 'logo_text' => 'ALDAR', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Aldar%')->count() ?: 97],
-        ['name' => 'Damac Properties', 'logo_text' => 'DAMAC', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Damac%')->count() ?: 80],
-        ['name' => 'Sobha Realty', 'logo_text' => 'SOBHA', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Sobha%')->count() ?: 78],
-        ['name' => 'Nakheel', 'logo_text' => 'NAKHEEL', 'logo_dark' => false, 'projects' => Property::where('address', 'LIKE', '%Nakheel%')->count() ?: 65],
-    ];
-
     // Fetch the available bedroom and bathroom options
     $bedroomOptions = range(1, 10); // Or dynamically fetch based on your data
     $bathroomOptions = range(1, 10); // Same for bathrooms
@@ -107,7 +131,9 @@ class HomeController extends Controller
         'banners' => $banners,
         'featuredProperties' => $featuredProperties,
         'featuredSections' => $featuredSections,
+        'developersSection' => $developersSection,
         'developers' => $developers,
+        'imageCarouselSection' => $imageCarouselSection,
         'properties' => $properties,
         'location' => $location,
         'propertyCounts' => $propertyCounts,
