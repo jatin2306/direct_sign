@@ -110,6 +110,38 @@
         }
     }
 
+    /* Mobile pagination: single line – show only Prev | Page X of Y | Next */
+    @media (max-width: 767px) {
+        .property-list-pagination-wrapper .pagination-full {
+            display: none !important;
+        }
+        .property-list-pagination-wrapper .pagination-mobile {
+            display: flex !important;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .property-list-pagination-wrapper .pagination-mobile .page-link {
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+        .property-list-pagination-wrapper .pagination-mobile .page-info {
+            padding: 0 8px;
+            font-size: 14px;
+            color: #969696;
+            white-space: nowrap;
+        }
+    }
+    @media (min-width: 768px) {
+        .property-list-pagination-wrapper .pagination-mobile {
+            display: none !important;
+        }
+    }
+
     /* Price filter: one line – min input, dash, max input */
     .price-filter-block {
         margin-top: 0.5rem;
@@ -888,14 +920,15 @@
                 @endforeach
                 @endif
                 <div class="row">
-                    <div class="col-12">
-                        <ul class="pagination mt-3">
+                    <div class="col-12 property-list-pagination-wrapper">
+                        <!-- Desktop: full pagination with page numbers -->
+                        <ul class="pagination pagination-full mt-3 justify-content-center flex-wrap d-none d-md-flex">
                             @if ($properties->onFirstPage())
-                            <li class="page-item disabled me-auto">
+                            <li class="page-item disabled">
                                 <span class="page-link b-radius-none">Prev</span>
                             </li>
                             @else
-                            <li class="page-item me-auto">
+                            <li class="page-item">
                                 <a class="page-link b-radius-none"
                                     href="{{ $properties->previousPageUrl() }}">Prev</a>
                             </li>
@@ -906,12 +939,36 @@
                             </li>
                             @endforeach
                             @if ($properties->hasMorePages())
-                            <li class="page-item ms-auto">
+                            <li class="page-item">
                                 <a class="page-link b-radius-none"
                                     href="{{ $properties->nextPageUrl() }}">Next</a>
                             </li>
                             @else
-                            <li class="page-item disabled ms-auto">
+                            <li class="page-item disabled">
+                                <span class="page-link b-radius-none">Next</span>
+                            </li>
+                            @endif
+                        </ul>
+                        <!-- Mobile: single line Prev | Page X of Y | Next -->
+                        <ul class="pagination pagination-mobile mt-3 justify-content-center" style="display: none;">
+                            @if ($properties->onFirstPage())
+                            <li class="page-item disabled">
+                                <span class="page-link b-radius-none">Prev</span>
+                            </li>
+                            @else
+                            <li class="page-item">
+                                <a class="page-link b-radius-none" href="{{ $properties->previousPageUrl() }}">Prev</a>
+                            </li>
+                            @endif
+                            <li class="page-item disabled d-flex align-items-center">
+                                <span class="page-info">Page {{ $properties->currentPage() }} of {{ $properties->lastPage() }}</span>
+                            </li>
+                            @if ($properties->hasMorePages())
+                            <li class="page-item">
+                                <a class="page-link b-radius-none" href="{{ $properties->nextPageUrl() }}">Next</a>
+                            </li>
+                            @else
+                            <li class="page-item disabled">
                                 <span class="page-link b-radius-none">Next</span>
                             </li>
                             @endif
