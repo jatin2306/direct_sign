@@ -442,21 +442,31 @@
     /* Responsive: banner and general mobile */
     @media (max-width: 768px) {
       .clientMob { display: block; }
-      .home-banner-section .slidee .content { padding: 16px; margin-left: 0 !important; margin-right: 0 !important; max-width: 100%; z-index: 1; }
+      /* Banner: cap height on mobile so it doesn’t dominate the screen */
+      .home-banner-section .slider { max-height: 200px; }
+      .home-banner-section .slidee { max-height: 200px; overflow: hidden; }
+      .home-banner-section .slidee .banner-slide-img {
+        max-height: 200px;
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        object-position: center;
+      }
+      .home-banner-section .slidee .content { padding: 12px 16px; margin-left: 0 !important; margin-right: 0 !important; max-width: 100%; z-index: 1; }
       .home-banner-section .slidee .content--left,
       .home-banner-section .slidee .content--center,
       .home-banner-section .slidee .content--right { margin-left: 16px !important; margin-right: 16px !important; }
-      .home-banner-section .slidee .content h3 { font-size: 18px; line-height: 1.3; margin-bottom: 8px; }
-      .home-banner-section .slidee .content p { font-size: 12px; line-height: 1.4; }
+      .home-banner-section .slidee .content h3 { font-size: 16px; line-height: 1.3; margin-bottom: 6px; }
+      .home-banner-section .slidee .content p { font-size: 11px; line-height: 1.4; }
       /* Banner CTA button: override inline top, fix sizing and touch target on mobile */
       .home-banner-section .slidee .content .btn {
         position: relative !important;
         top: 0 !important;
-        margin-top: 12px;
-        padding: 12px 20px;
-        font-size: 14px;
-        min-height: 44px;
-        min-width: 120px;
+        margin-top: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 40px;
+        min-width: 100px;
         max-width: 100%;
         width: auto;
         box-sizing: border-box;
