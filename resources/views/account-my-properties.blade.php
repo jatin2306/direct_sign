@@ -136,43 +136,33 @@
                                           </div>
                                           <ul class="property-info list-unstyled d-flex">
                                               <li class="flex-fill property-bed">
-                                                <i class="fas fa-bed"></i>Bed<span>{{ $property->bedrooms }}{{ $property->bedrooms > 5 ? '+' : '' }}</span>
+                                                <i class="fas fa-bed"></i>Bed<span>{{ $property->bedrooms !== null && $property->bedrooms !== '' ? $property->bedrooms . ($property->bedrooms > 5 ? '+' : '') : '—' }}</span>
                                               </li>
                                               <li class="flex-fill property-bath">
-                                                      <i class="fas fa-bath"></i>Bath<span>{{ $property->bathrooms }}{{ $property->bathrooms > 5 ? '+' : '' }}</span>      
+                                                      <i class="fas fa-bath"></i>Bath<span>{{ $property->bathrooms !== null && $property->bathrooms !== '' ? $property->bathrooms . ($property->bathrooms > 5 ? '+' : '') : '—' }}</span>
                                               </li>
                                               <li class="flex-fill property-m-sqft"><i
-                                                      class="far fa-square"></i>sqft<span>{{ $property->builtArea }}</span>
+                                                      class="far fa-square"></i>sqft<span>{{ $property->builtArea ?? '—' }}</span>
                                               </li>
                                           </ul>
                                           <p class="mb-0 mt-3">For those of you who are serious about having more, doing
                                               more, giving more and being with some understanding.</p>
                                       </div>
-                                      <div class="property-btn d-flex justify-content-end"
-                                            style="margin: 0px 2px 0px 10px; max-height: 40px;">
-                                            <a class="btn btn-primary" href="tel:+919990968968"
-                                                style="max-width: 200px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-phone fa-flip-horizontal"
-                                                    style="margin-right: 8px;"></i>Call
+                                      <div class="property-btn property-btn-mobile d-flex justify-content-end flex-wrap gap-2">
+                                            <a class="btn btn-primary btn-call" href="tel:+919990968968">
+                                                <i class="fas fa-phone fa-flip-horizontal me-1"></i>Call
                                             </a>
-                                            <a class="btn btn-primary" href="mailto:info@directdeal.ae"
-                                                style="max-width: 200px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-envelope" style="margin-right: 8px;"></i>Email
+                                            <a class="btn btn-primary btn-email" href="mailto:info@directdeal.ae">
+                                                <i class="fas fa-envelope me-1"></i>Email
                                             </a>
-                                            <a class="btn btn-primary" href="https://wa.me/919990968968" target="_blank"
-                                                style="max-width: 200px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fab fa-whatsapp" aria-hidden="true"
-                                                    style="margin-right: 8px;"></i>Whatsapp
+                                            <a class="btn btn-primary btn-whatsapp" href="https://wa.me/919990968968" target="_blank">
+                                                <i class="fab fa-whatsapp me-1" aria-hidden="true"></i>Whatsapp
                                             </a>
-                                            <a class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            <a class="btn btn-primary btn-fav {{ auth()->check() && $property->isFavoritedBy(auth()->user()) ? 'is-favorited' : '' }}" data-bs-toggle="tooltip" data-bs-placement="top"
                                                 title="Favourite" href="#"
-                                                onclick="event.preventDefault(); document.getElementById('favorite-form-{{ $property->id }}').submit();"
-                                                style="display: flex; align-items: center; text-decoration: none;">
-                                                <i class="{{ auth()->check() && $property->isFavoritedBy(auth()->user()) ? 'fas fa-heart' : 'far fa-heart' }}"
-                                                    style="color: {{ auth()->check() && $property->isFavoritedBy(auth()->user()) ? '#26ae61' : 'inherit' }}; margin-right: -10px;">
-                                                </i>
+                                                onclick="event.preventDefault(); document.getElementById('favorite-form-{{ $property->id }}').submit();">
+                                                <i class="{{ auth()->check() && $property->isFavoritedBy(auth()->user()) ? 'fas fa-heart' : 'far fa-heart' }}"></i>
                                             </a>
-
                                             <form id="favorite-form-{{ $property->id }}"
                                                 action="{{ route('toggleFavorite', $property->id) }}" method="POST"
                                                 style="display: none;">
@@ -238,4 +228,40 @@
     </section>
     <!--=================================
       My profile -->
+
+    <style>
+    /* My Properties – mobile layout and touch-friendly CTAs */
+    @media (max-width: 767px) {
+        .property-item.property-col-list .row { margin-left: 0; margin-right: 0; }
+        .property-item.property-col-list .col-lg-4,
+        .property-item.property-col-list .col-md-5 { max-width: 100%; flex: 0 0 100%; }
+        .property-item .property-details { min-width: 0; overflow: hidden; border-left: none; }
+        .property-details-inner-box { flex-wrap: wrap; width: 100%; }
+        .property-details-inner-box-left { max-width: 100%; min-width: 0; }
+        .property-details-inner .property-title { font-size: 1rem; line-height: 1.35; }
+        .property-details-inner .property-title a { display: inline; word-break: break-word; }
+        .property-details-inner .property-title .badge { font-size: 0.7rem; margin-top: 2px; }
+        .property-details-inner-box .property-price {
+            width: 100%; flex-basis: 100%; text-align: left !important; margin-top: 6px;
+            font-size: 1.15rem; min-width: 0 !important;
+        }
+        .property-details .property-info { flex-wrap: nowrap; min-width: 0; padding-left: 0; }
+        .property-details .property-info li { flex: 1 1 0; font-size: 12px; padding: 8px 4px 0 !important; min-width: 0; }
+        .property-details .property-info li i { margin-right: 4px; }
+        .property-details .property-details-inner { padding: 12px 14px; }
+        .property-details .property-details-inner p { font-size: 0.9rem; margin-bottom: 10px; }
+        /* CTA row: wrap, smaller buttons, touch-friendly */
+        .property-btn-mobile {
+            margin: 8px 0 0 !important; max-height: none !important;
+            justify-content: flex-start !important; padding: 0 14px 12px;
+            gap: 8px;
+        }
+        .property-btn-mobile .btn { flex: 1 1 auto; min-width: 0; max-width: none; padding: 10px 12px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+        .property-btn-mobile .btn-fav { flex: 0 0 auto; min-width: 44px; }
+        .property-btn-mobile .btn-fav.is-favorited i { color: #fff; }
+        .property-item.property-col-list .property-image img { width: 100%; height: 200px; object-fit: cover; }
+        .pagination { flex-wrap: wrap; justify-content: center; gap: 4px; }
+        .pagination .page-link { padding: 8px 12px; min-width: 44px; text-align: center; }
+    }
+    </style>
 @endsection

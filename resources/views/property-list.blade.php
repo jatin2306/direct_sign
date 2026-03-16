@@ -110,36 +110,25 @@
         }
     }
 
-    /* Mobile pagination: single line – show only Prev | Page X of Y | Next */
-    @media (max-width: 767px) {
-        .property-list-pagination-wrapper .pagination-full {
-            display: none !important;
-        }
-        .property-list-pagination-wrapper .pagination-mobile {
-            display: flex !important;
-            flex-wrap: nowrap;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .property-list-pagination-wrapper .pagination-mobile .page-link {
-            padding: 10px 16px;
-            white-space: nowrap;
-        }
-        .property-list-pagination-wrapper .pagination-mobile .page-info {
-            padding: 0 8px;
-            font-size: 14px;
-            color: #969696;
-            white-space: nowrap;
-        }
+    /* Mobile pagination: single line – Prev | Page X of Y | Next (visibility via d-flex d-md-none on ul) */
+    .property-list-pagination-wrapper .pagination-mobile {
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
     }
-    @media (min-width: 768px) {
-        .property-list-pagination-wrapper .pagination-mobile {
-            display: none !important;
-        }
+    .property-list-pagination-wrapper .pagination-mobile .page-link {
+        padding: 10px 16px;
+        white-space: nowrap;
+    }
+    .property-list-pagination-wrapper .pagination-mobile .page-info {
+        padding: 0 8px;
+        font-size: 14px;
+        color: #969696;
+        white-space: nowrap;
     }
 
     /* Title & address: wrap to next line on overflow (mobile + web) */
@@ -173,7 +162,15 @@
     @media (max-width: 767px) {
         .space-ptb .container { overflow-x: hidden; max-width: 100%; }
         .property-item.property-col-list .row { margin-left: 0; margin-right: 0; }
-        .property-item .property-details { min-width: 0; overflow: hidden; }
+        .property-item.property-col-list .col-12.col-md-5,
+        .property-item.property-col-list .col-12.col-md-7 { max-width: 100%; flex: 0 0 100%; }
+        .property-item.property-col-list .property-image img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            object-position: center;
+        }
+        .property-item .property-details { min-width: 0; overflow: hidden; border-left: none; }
         .property-details-inner-box {
             flex-wrap: wrap;
             width: 100%;
@@ -213,8 +210,22 @@
             padding-left: 14px !important;
             padding-right: 14px !important;
         }
+        .property-details .container.px-3 .row { margin-left: -6px; margin-right: -6px; }
+        .property-details .container.px-3 [class*="col-"] { padding-left: 6px; padding-right: 6px; }
+        .property-details .container.px-3 .btn { font-size: 13px; padding: 10px 8px; min-height: 44px; }
         .suggested-properties .property-item .row { margin-left: 0; margin-right: 0; }
         .py-5.bg-light .container .row { margin-left: 0; margin-right: 0; }
+    }
+
+    /* Web: pagination wrap when many pages */
+    .property-list-pagination-wrapper .pagination-full {
+        flex-wrap: wrap;
+        gap: 4px;
+        row-gap: 6px;
+    }
+    .property-list-pagination-wrapper .pagination-full .page-link {
+        min-width: 40px;
+        text-align: center;
     }
 
     /* Price filter: one line – min input, dash, max input */
@@ -316,6 +327,11 @@
             .listing-top-bar .breadcrumb {
                 background: transparent;
                 padding: 0;
+            }
+            @media (max-width: 767px) {
+                .listing-top-bar .d-flex { flex-wrap: wrap; gap: 8px; }
+                .listing-top-bar .breadcrumb { font-size: 0.8rem; }
+                .listing-top-bar #sort { min-width: 140px; width: auto; }
             }
         </style>
         <style>
@@ -458,21 +474,11 @@
                                     $reqPriceMax = request('priceMax');
                                     $reqAreaMin = request('areaMin');
                                     $reqAreaMax = request('areaMax');
+                                    // International standard: thousands (1,000), millions (1,000,000), billions (1,000,000,000)
                                     $fmt = function($v) {
                                         if ($v === null || $v === '') return '';
                                         $n = (int) preg_replace('/[^0-9]/', '', (string) $v);
-                                        if ($n === 0) return '0';
-                                        $s = (string) $n;
-                                        if (strlen($s) <= 3) return $s;
-                                        $last3 = substr($s, -3);
-                                        $rest = substr($s, 0, -3);
-                                        $len = strlen($rest);
-                                        $r = '';
-                                        for ($i = 0; $i < $len; $i++) {
-                                            if ($i > 0 && ($len - $i) % 2 === 0) $r .= ',';
-                                            $r .= $rest[$i];
-                                        }
-                                        return $r . ',' . $last3;
+                                        return number_format($n, 0, '.', ',');
                                     };
                                     @endphp
                                     <div class="mb-3 mt-3 price-filter-block">
@@ -482,14 +488,14 @@
                                         </h6>
                                         <div class="price-filter-inline">
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="numeric" name="priceMin" id="filterPriceMin" class="form-control price-filter-input formatted-number"
-                                                    placeholder="No min."
+                                                        <input type="text" inputmode="text" name="priceMin" id="filterPriceMin" class="form-control price-filter-input formatted-number"
+                                                    placeholder="e.g. 500,000 or 1.5M"
                                                     value="{{ $reqPriceMin !== null && $reqPriceMin !== '' ? $fmt($reqPriceMin) : '' }}">
                                             </div>
                                             <span class="price-filter-sep">–</span>
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="numeric" name="priceMax" id="filterPriceMax" class="form-control price-filter-input formatted-number"
-                                                    placeholder="No max."
+                                                <input type="text" inputmode="text" name="priceMax" id="filterPriceMax" class="form-control price-filter-input formatted-number"
+                                                    placeholder="e.g. 2,000,000 or 2M"
                                                     value="{{ $reqPriceMax !== null && $reqPriceMax !== '' ? $fmt($reqPriceMax) : '' }}">
                                             </div>
                                         </div>
@@ -503,14 +509,14 @@
                                         </h6>
                                         <div class="price-filter-inline">
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="numeric" name="areaMin" id="filterAreaMin" class="form-control price-filter-input formatted-number"
-                                                    placeholder="No min."
+                                                <input type="text" inputmode="text" name="areaMin" id="filterAreaMin" class="form-control price-filter-input formatted-number"
+                                                    placeholder="e.g. 500 or 1,000"
                                                     value="{{ $reqAreaMin !== null && $reqAreaMin !== '' ? $fmt($reqAreaMin) : '' }}">
                                             </div>
                                             <span class="price-filter-sep">–</span>
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="numeric" name="areaMax" id="filterAreaMax" class="form-control price-filter-input formatted-number"
-                                                    placeholder="No max."
+                                                <input type="text" inputmode="text" name="areaMax" id="filterAreaMax" class="form-control price-filter-input formatted-number"
+                                                    placeholder="e.g. 5,000"
                                                     value="{{ $reqAreaMax !== null && $reqAreaMax !== '' ? $fmt($reqAreaMax) : '' }}">
                                             </div>
                                         </div>
@@ -533,17 +539,33 @@
 
                         <script>
                             (function() {
-                                function stripCommas(s) {
-                                    return (s == null ? '' : String(s)).replace(/,/g, '');
+                                // Parse international shorthand: K (thousand), M (million), B (billion)
+                                function parseShortNumber(s) {
+                                    if (s == null || s === '') return '';
+                                    var str = String(s).trim().toUpperCase().replace(/,/g, '');
+                                    var m = str.match(/^([\d.]+)\s*([KMB])?$/);
+                                    if (!m) return str.replace(/\D/g, '');
+                                    var num = parseFloat(m[1]);
+                                    if (isNaN(num)) return '';
+                                    var suffix = m[2];
+                                    if (suffix === 'K') num *= 1e3;
+                                    else if (suffix === 'M') num *= 1e6;
+                                    else if (suffix === 'B') num *= 1e9;
+                                    return String(Math.round(num));
                                 }
-                                function formatIndianNumber(val) {
+                                function toRawValue(s) {
+                                    var parsed = parseShortNumber(s);
+                                    if (parsed === '') return '';
+                                    return parsed.replace(/\D/g, '');
+                                }
+                                function stripCommas(s) {
+                                    return toRawValue(s) || (s == null ? '' : String(s)).replace(/,/g, '');
+                                }
+                                // International format: thousands (1,000), millions (1,000,000), billions (1,000,000,000)
+                                function formatInternational(val) {
                                     var s = String(val).replace(/\D/g, '');
                                     if (!s) return '';
-                                    if (s.length <= 3) return s;
-                                    var last3 = s.slice(-3);
-                                    var rest = s.slice(0, -3);
-                                    rest = rest.replace(/(\d)(?=(\d{2})+$)/g, '$1,');
-                                    return rest + ',' + last3;
+                                    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                                 }
                                 function setupFormattedNumberInput(id) {
                                     var input = document.getElementById(id);
@@ -551,11 +573,14 @@
                                     input.addEventListener('input', function() {
                                         var start = this.selectionStart;
                                         var prevLen = this.value.length;
-                                        var raw = stripCommas(this.value);
-                                        this.value = formatIndianNumber(raw);
-                                        var newLen = this.value.length;
-                                        var newStart = Math.max(0, start + (this.value.length - prevLen));
+                                        var raw = toRawValue(this.value);
+                                        this.value = raw ? formatInternational(raw) : '';
+                                        var newStart = Math.max(0, Math.min(start, this.value.length));
                                         this.setSelectionRange(newStart, newStart);
+                                    });
+                                    input.addEventListener('blur', function() {
+                                        var raw = toRawValue(this.value);
+                                        if (raw) this.value = formatInternational(raw);
                                     });
                                 }
                                 function getFormSnapshot(form) {
@@ -1025,7 +1050,7 @@
                             @endif
                         </ul>
                         <!-- Mobile: single line Prev | Page X of Y | Next -->
-                        <ul class="pagination pagination-mobile mt-3 justify-content-center" style="display: none;">
+                        <ul class="pagination pagination-mobile mt-3 justify-content-center d-flex d-md-none">
                             @if ($properties->onFirstPage())
                             <li class="page-item disabled">
                                 <span class="page-link b-radius-none">Prev</span>

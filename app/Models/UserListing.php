@@ -17,6 +17,7 @@ class UserListing extends Model
         'emirates_id',
         'property_status',
         'rent_frequency',
+        'custom_rent_range',
         'price',
         'images',
         'status',

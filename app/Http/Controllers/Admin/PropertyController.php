@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 use App\Models\Category;
 use App\Models\ChildType;
 use App\Models\Amenity;
@@ -289,34 +290,17 @@ public function edit($id)
 
     
 
-    // Handle new image uploads if any
+    // Handle new image uploads if any (encode in memory for faster save)
     if ($request->hasFile('pictures')) {
-        $destDir = public_path('storage/property_pictures');
-        if (! File::isDirectory($destDir)) {
-            File::makeDirectory($destDir, 0755, true);
-        }
-
+        $manager = new ImageManager(new Driver());
         foreach ($request->file('pictures') as $picture) {
-            $manager = new ImageManager(new Driver());
             $image = $manager->read($picture)->resize(800, 800);
-
-            $tempDirectory = storage_path('app/temp');
-            if (! file_exists($tempDirectory)) {
-                mkdir($tempDirectory, 0777, true);
-            }
-
-            $tempPath = tempnam($tempDirectory, 'property_');
-            $image->save($tempPath);
-
-            $uniqueId = uniqid();
-            $filename = 'property_' . time() . '_' . $uniqueId . '.jpg';
+            $filename = 'property_' . time() . '_' . uniqid() . '.jpg';
             $pathForDatabase = 'property_pictures/' . $filename;
-            $destPath = $destDir . '/' . $filename;
-
-            if (File::put($destPath, file_get_contents($tempPath)) !== false) {
+            $encoded = $image->encode(new JpegEncoder(quality: 85));
+            if (Storage::put($pathForDatabase, (string) $encoded) !== false) {
                 $property->pictures()->create(['path' => $pathForDatabase]);
             }
-            @unlink($tempPath);
         }
     }
 

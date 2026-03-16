@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 use Illuminate\Support\Facades\Http;
 
 
@@ -30,12 +31,37 @@ class PropertyController extends Controller
      */
 
 
+    /**
+     * Parse filter number: strip commas and expand K/M/B (international thousand, million, billion).
+     */
+    private function parseFilterNumber(?string $value): ?int
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+        $s = strtoupper(trim(str_replace(',', '', $value)));
+        if (preg_match('/^([\d.]+)\s*([KMB])?$/', $s, $m)) {
+            $num = (float) $m[1];
+            $suffix = $m[2] ?? '';
+            if ($suffix === 'K') {
+                $num *= 1e3;
+            } elseif ($suffix === 'M') {
+                $num *= 1e6;
+            } elseif ($suffix === 'B') {
+                $num *= 1e9;
+            }
+            return (int) round($num);
+        }
+        if (is_numeric($s)) {
+            return (int) round((float) $s);
+        }
+        return null;
+    }
+
     public function index(Request $request)
     {
-        $priceMin = $request->has('priceMin') && $request->get('priceMin') !== '' && is_numeric(str_replace(',', '', $request->get('priceMin')))
-            ? (int) round((float) str_replace(',', '', $request->get('priceMin'))) : null;
-        $priceMax = $request->has('priceMax') && $request->get('priceMax') !== '' && is_numeric(str_replace(',', '', $request->get('priceMax')))
-            ? (int) round((float) str_replace(',', '', $request->get('priceMax'))) : null;
+        $priceMin = $this->parseFilterNumber($request->get('priceMin'));
+        $priceMax = $this->parseFilterNumber($request->get('priceMax'));
         $propertyType = $request->get('propertyType'); // Sale or Rent
         $category = $request->get('property_category_id'); // Filter for property category
         $childType = $request->get('child_type_id'); // Filter for child type
@@ -43,10 +69,8 @@ class PropertyController extends Controller
         $sortOption = $request->get('sort', ''); // Sort by price or date
         $bedrooms = $request->get('bedrooms', null); // Number of bedrooms
         $bathrooms = $request->get('bathrooms', null); // Number of bathrooms
-        $areaMin = $request->has('areaMin') && $request->get('areaMin') !== '' && is_numeric(str_replace(',', '', $request->get('areaMin')))
-            ? (int) round((float) str_replace(',', '', $request->get('areaMin'))) : null;
-        $areaMax = $request->has('areaMax') && $request->get('areaMax') !== '' && is_numeric(str_replace(',', '', $request->get('areaMax')))
-            ? (int) round((float) str_replace(',', '', $request->get('areaMax'))) : null;
+        $areaMin = $this->parseFilterNumber($request->get('areaMin'));
+        $areaMax = $this->parseFilterNumber($request->get('areaMax'));
         $location = $request->filled('location') ? trim((string) $request->get('location')) : null;
         if ($location === '') {
             $location = null;
@@ -270,47 +294,15 @@ public function scopeFilterByStatus($query, $status)
         $property = Property::create($data);
 
         if (!$data['needs_photographer'] && $request->hasFile('pictures')) {
-            // Loop through each uploaded image
+            $manager = new ImageManager(new Driver());
             foreach ($request->file('pictures') as $picture) {
-                // Initialize the ImageManager with default configuration (GD driver is default)
-                $manager = new ImageManager(new Driver());  // Default driver (GD)
-        
-                // Read the image and create an image instance
-                $image = $manager->read($picture);  // 'make' is the correct method for reading images
-        
-                // Resize the image to 800x800
+                $image = $manager->read($picture);
                 $image->resize(800, 800);
-        
-                // Define a custom temporary directory
-                $tempDirectory = storage_path('app/temp');  // Using Laravel's storage folder for temp files
-                if (!file_exists($tempDirectory)) {
-                    mkdir($tempDirectory, 0777, true);  // Create the directory if it doesn't exist
-                }
-        
-                // Save to a temporary file within the custom directory
-                $tempPath = tempnam($tempDirectory, 'property_');
-                $image->save($tempPath);
-        
-                // Generate a unique filename based on the current timestamp
-                $uniqueId = uniqid(); // Generates a unique identifier
-                $filename = 'property_' . time() . '_' . $uniqueId . '.jpg';
-
-                // Define the full storage path for saving the image
-                // $storagePath = 'public/property_pictures/' . $filename;
+                $filename = 'property_' . time() . '_' . uniqid() . '.jpg';
                 $storagePath = 'property_pictures/' . $filename;
-
-                // Save the image to permanent storage
-                Storage::put($storagePath, file_get_contents($tempPath));
-
-                // Delete the temporary file
-                unlink($tempPath);
-
-                // Remove 'public/' before saving to database
-                $pathForDatabase = 'property_pictures/' . $filename;
-
-                // Save the path in the database
-                $property->pictures()->create(['path' => $pathForDatabase]);
-
+                $encoded = $image->encode(new JpegEncoder(quality: 85));
+                Storage::put($storagePath, (string) $encoded);
+                $property->pictures()->create(['path' => $storagePath]);
             }
         }
 

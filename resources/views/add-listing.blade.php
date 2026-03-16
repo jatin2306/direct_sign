@@ -237,13 +237,14 @@ document.querySelectorAll('input[name="rent_frequency"]').forEach(radio => {
 
         if (this.value === 'custom') {
             customDates.classList.remove('d-none');
-            if (startInput) startInput.removeAttribute('disabled');
-            if (endInput) endInput.removeAttribute('disabled');
+            if (startInput) { startInput.removeAttribute('disabled'); startInput.setAttribute('required', 'required'); }
+            if (endInput) { endInput.removeAttribute('disabled'); endInput.setAttribute('required', 'required'); }
         } else {
             customDates.classList.add('d-none');
             customDates.querySelectorAll('input').forEach(i => {
                 i.value = '';
                 i.setAttribute('disabled', 'disabled');
+                i.removeAttribute('required');
             });
         }
     });

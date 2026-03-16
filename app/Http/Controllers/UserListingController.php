@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\UserListing;
 use App\Models\Property;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 
 class UserListingController extends Controller
 {
@@ -27,27 +30,21 @@ class UserListingController extends Controller
             'emirates_id'  => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
 
             'property_status' => 'required|in:rented,vacant,vacant_on_transfer,off_plan',
-            // 'rent_frequency' => 'nullable|required_if:listing_type,rent',
 
-            // 'custom_start_date' => 'nullable|required_if:rent_frequency,custom|date',
-            // 'custom_end_date'   => 'nullable|required_if:rent_frequency,custom|date|after:custom_start_date',
+            'rent_frequency' => 'nullable|required_if:listing_type,rent|in:year,month,custom',
+            'custom_start_date' => 'nullable|required_if:rent_frequency,custom|date',
+            'custom_end_date'   => 'nullable|required_if:rent_frequency,custom|date|after_or_equal:custom_start_date',
 
             'price' => 'required|integer',
 
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
-        
-        // ===============================
-        // 1.1 HANDLE CUSTOM RENT STRING
-        // ===============================
-        // if (
-        //     $validated['rent_frequency'] === 'custom'
-        //     && $request->custom_start_date
-        //     && $request->custom_end_date
-        // ) {
-        //     $validated['rent_frequency'] =
-        //         $request->custom_start_date . ' to ' . $request->custom_end_date;
-        // }
+
+        // When custom is selected, store the date range (for display); rent_frequency stays 'custom'
+        if (($validated['rent_frequency'] ?? '') === 'custom' && ! empty($validated['custom_start_date']) && ! empty($validated['custom_end_date'])) {
+            $validated['custom_rent_range'] = $validated['custom_start_date'] . ' to ' . $validated['custom_end_date'];
+        }
+        unset($validated['custom_start_date'], $validated['custom_end_date']);
 
         // ===============================
         // 2. FILE UPLOADS (DOCS)
@@ -66,12 +63,35 @@ class UserListingController extends Controller
             ->store('user_listings/docs', 'public');
 
         // ===============================
-        // 3. IMAGES
+        // 3. IMAGES (resize & compress for faster save and smaller files)
         // ===============================
         $images = [];
         if ($request->hasFile('images')) {
+            $manager = new ImageManager(new Driver());
+            $maxDimension = 1200;
+            $jpegQuality = 82;
+
             foreach ($request->file('images') as $image) {
-                $images[] = $image->store('user_listings/images', 'public');
+                try {
+                    $img = $manager->read($image);
+                    $w = $img->width();
+                    $h = $img->height();
+                    if ($w > $maxDimension || $h > $maxDimension) {
+                        if ($w >= $h) {
+                            $img->resize(width: $maxDimension);
+                        } else {
+                            $img->resize(height: $maxDimension);
+                        }
+                    }
+                    $filename = 'listing_' . uniqid() . '_' . time() . '.jpg';
+                    $relPath = 'user_listings/images/' . $filename;
+                    $encoded = $img->encode(new JpegEncoder(quality: $jpegQuality));
+                    Storage::disk('public')->put($relPath, (string) $encoded);
+                    $images[] = $relPath;
+                } catch (\Throwable $e) {
+                    // Fallback: store original if processing fails
+                    $images[] = $image->store('user_listings/images', 'public');
+                }
             }
         }
 

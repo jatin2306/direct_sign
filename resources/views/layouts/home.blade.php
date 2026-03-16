@@ -144,6 +144,44 @@
         .footer-social-list li {
             display: inline-block;
         }
+
+        /* Footer full width across all pages + sticky at bottom */
+        html { height: 100%; }
+        body {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-main { flex: 1 0 auto; }
+        .footer {
+            width: 100%;
+            max-width: 100%;
+            flex-shrink: 0;
+            margin-left: 0;
+            margin-right: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .footer-bottom { width: 100%; max-width: 100%; }
+
+        /* Footer: stack and spacing on mobile and tablet */
+        @media (max-width: 991px) {
+            .footer .row > [class*="col-"] {
+                margin-bottom: 1.5rem;
+            }
+            .footer .row > [class*="col-"]:last-child {
+                margin-bottom: 0;
+            }
+        }
+        @media (max-width: 767px) {
+            .footer .container { padding-left: 1rem; padding-right: 1rem; }
+            .footer-contact-info h5,
+            .footer-subscribe h5 { font-size: 1.1rem; }
+            .footer-bottom .row { text-align: center !important; }
+            .footer-bottom .text-md-start,
+            .footer-bottom .text-md-end { text-align: center !important; }
+            .footer-bottom .my-3 { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+        }
     </style>
 
 
@@ -381,7 +419,9 @@
 </header>
 
 
+    <main class="page-main">
     @yield('content')
+    </main>
 
     <!--=================================
 newsletter -->
@@ -411,7 +451,7 @@ newsletter -->
 
     <!--=================================
 footer-->
-    <footer class="footer bg-dark space-pt">
+    <footer class="footer bg-dark space-pt mt-auto" id="site-footer">
         <div class="container">
             <div class="row">
                    
