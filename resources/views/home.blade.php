@@ -268,12 +268,13 @@
 
     <style>
 
-/* Banner: free size – show image as uploaded (full width, natural height) */
+/* Banner: capped height – shorter slider on all screens */
     .home-banner-section .slider {
       position: relative;
       width: 100%;
       overflow: hidden;
       max-width: 100%;
+      max-height: 380px;
     }
 
     .home-banner-section .slides {
@@ -287,11 +288,16 @@
       flex-shrink: 0;
       position: relative;
       display: block;
+      max-height: 380px;
+      overflow: hidden;
     }
 
     .home-banner-section .slidee .banner-slide-img {
       width: 100%;
-      height: auto;
+      height: 380px;
+      max-height: 380px;
+      object-fit: cover;
+      object-position: center;
       display: block;
       vertical-align: top;
     }

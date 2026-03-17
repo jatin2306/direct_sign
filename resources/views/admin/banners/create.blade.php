@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.banners.store') }}" method="POST" enctype="multipart/form-data" class="card shadow-sm">
+    <form action="{{ route('admin.banners.store') }}" method="POST" enctype="multipart/form-data" class="card shadow-sm" id="banner-form">
         @csrf
         <div class="card-body">
             <div class="row g-3">
@@ -63,15 +63,19 @@
                             <p class="mb-0 small text-muted">or <span class="text-primary">browse</span> to choose a file</p>
                         </div>
                     </div>
-                    <div id="banner-create-size-error" class="invalid-feedback d-block text-danger" style="display: none;"></div>
                     @error('image') <div class="invalid-feedback d-block text-danger">{{ $message }}</div> @enderror
-                    <small class="text-muted d-block mt-1">Image must be <strong>exactly 1280 × 400 px</strong>. JPEG, PNG, GIF, WebP. Max 5MB.</small>
+                    <small class="text-muted d-block mt-1">Recommended <strong>1280 × 400 px</strong>. Larger images can be cropped in the preview. JPEG, PNG, GIF, WebP. Max 5MB.</small>
                 </div>
-                <div class="col-12" id="banner-create-preview-wrap" style="display: none;">
-                    <label class="form-label">Preview</label>
-                    <div class="border rounded overflow-hidden bg-light text-center" style="max-height: 320px;">
-                        <img id="banner-create-preview-img" src="" alt="" class="img-fluid" style="max-height: 300px; width: auto;">
+                <div class="col-12" id="banner-create-crop-wrap" style="display: none;">
+                    <label class="form-label">Crop preview <span class="text-muted">(fixed 1280×400 – drag image to position)</span></label>
+                    <div class="banner-crop-box" id="banner-create-crop-box">
+                        <div class="banner-crop-inner" id="banner-create-crop-inner">
+                            <img id="banner-create-crop-img" src="" alt="">
+                        </div>
                     </div>
+                    <p id="banner-create-crop-hint" class="small text-muted mt-1 mb-0"></p>
+                    <input type="hidden" name="crop_x" id="banner-create-crop-x" value="">
+                    <input type="hidden" name="crop_y" id="banner-create-crop-y" value="">
                 </div>
                 <div class="col-md-4">
                     <label for="sort_order" class="form-label">Sort order</label>
@@ -94,7 +98,6 @@
 
 @push('styles')
 <style>
-#banner-create-preview-wrap .img-fluid { display: block; margin: 0 auto; }
 .banner-dropzone {
     border: 2px dashed #dee2e6;
     border-radius: 8px;
@@ -108,78 +111,216 @@
 .banner-dropzone.drag-over { border-color: #26ae61; background: #e9f7f0; }
 .banner-dropzone.is-invalid { border-color: #dc3545; }
 .banner-dropzone-inner { pointer-events: none; }
+
+.banner-crop-box {
+    width: 640px;
+    height: 200px;
+    max-width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #111;
+    border: 2px solid #26ae61;
+    border-radius: 8px;
+    cursor: grab;
+    user-select: none;
+}
+.banner-crop-box:active { cursor: grabbing; }
+.banner-crop-inner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+.banner-crop-inner img {
+    display: block;
+    pointer-events: none;
+}
 </style>
 @endpush
 @push('scripts')
 <script>
 (function() {
-    document.addEventListener('DOMContentLoaded', function() {
-        var fileInput = document.getElementById('banner-create-image');
-        var wrap = document.getElementById('banner-create-preview-wrap');
-        var previewImg = document.getElementById('banner-create-preview-img');
-        var sizeErrorEl = document.getElementById('banner-create-size-error');
-        var requiredWidth = 1280, requiredHeight = 400;
+    var BANNER_W = 1280, BANNER_H = 400;
+    var PREVIEW_W = 640, PREVIEW_H = 200;
+    var SCALE = PREVIEW_W / BANNER_W;
 
-        if (!fileInput || !wrap || !previewImg) return;
+    var fileInput = document.getElementById('banner-create-image');
+    var cropWrap = document.getElementById('banner-create-crop-wrap');
+    var cropBox = document.getElementById('banner-create-crop-box');
+    var cropInner = document.getElementById('banner-create-crop-inner');
+    var cropImg = document.getElementById('banner-create-crop-img');
+    var cropHint = document.getElementById('banner-create-crop-hint');
+    var inputCropX = document.getElementById('banner-create-crop-x');
+    var inputCropY = document.getElementById('banner-create-crop-y');
 
-        var dropzone = document.getElementById('banner-create-dropzone');
-        if (dropzone) {
-            dropzone.addEventListener('click', function() { fileInput.click(); });
-            dropzone.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.add('drag-over');
-            });
-            dropzone.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove('drag-over');
-            });
-            dropzone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove('drag-over');
-                var files = e.dataTransfer && e.dataTransfer.files;
-                if (files && files.length && files[0].type.match('image.*')) {
-                    var dt = new DataTransfer();
-                    dt.items.add(files[0]);
-                    fileInput.files = dt.files;
-                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
+    if (!fileInput || !cropWrap || !cropBox || !cropInner || !cropImg) return;
+
+    var imgNaturalW = 0, imgNaturalH = 0;
+    var offsetX = 0, offsetY = 0;
+    var dragStartX, dragStartY, startOffsetX, startOffsetY;
+    var isSmallImage = false;
+
+    function setCropInputs(x, y) {
+        if (inputCropX) inputCropX.value = Math.round(x);
+        if (inputCropY) inputCropY.value = Math.round(y);
+    }
+
+    function clampOffsets() {
+        var scaledW = imgNaturalW * SCALE, scaledH = imgNaturalH * SCALE;
+        var maxX = Math.max(0, scaledW - PREVIEW_W);
+        var maxY = Math.max(0, scaledH - PREVIEW_H);
+        offsetX = Math.max(-maxX, Math.min(0, offsetX));
+        offsetY = Math.max(-maxY, Math.min(0, offsetY));
+        cropInner.style.left = offsetX + 'px';
+        cropInner.style.top = offsetY + 'px';
+        var cropX = Math.round(-offsetX / SCALE);
+        var cropY = Math.round(-offsetY / SCALE);
+        setCropInputs(cropX, cropY);
+    }
+
+    function setupDrag() {
+        cropBox.onmousedown = function(e) {
+            e.preventDefault();
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            startOffsetX = offsetX;
+            startOffsetY = offsetY;
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', onDragEnd);
+        };
+        cropBox.ontouchstart = function(e) {
+            e.preventDefault();
+            var t = e.touches[0];
+            dragStartX = t.clientX;
+            dragStartY = t.clientY;
+            startOffsetX = offsetX;
+            startOffsetY = offsetY;
+            document.addEventListener('touchmove', onDragTouch, { passive: false });
+            document.addEventListener('touchend', onDragEnd);
+        };
+    }
+    function onDrag(e) {
+        offsetX = startOffsetX + (e.clientX - dragStartX);
+        offsetY = startOffsetY + (e.clientY - dragStartY);
+        if (isSmallImage) { clampOffsetsSmall(); setCropInputsFromOffset(); } else clampOffsets();
+    }
+    function onDragTouch(e) {
+        e.preventDefault();
+        var t = e.touches[0];
+        offsetX = startOffsetX + (t.clientX - dragStartX);
+        offsetY = startOffsetY + (t.clientY - dragStartY);
+        if (isSmallImage) { clampOffsetsSmall(); setCropInputsFromOffset(); } else clampOffsets();
+    }
+    function onDragEnd() {
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('touchmove', onDragTouch);
+        document.removeEventListener('touchend', onDragEnd);
+    }
+
+    function showCropPreview(src, naturalW, naturalH) {
+        imgNaturalW = naturalW;
+        imgNaturalH = naturalH;
+        cropImg.src = src;
+
+        isSmallImage = (naturalW < BANNER_W || naturalH < BANNER_H);
+        if (naturalW === BANNER_W && naturalH === BANNER_H) {
+            cropImg.style.width = (naturalW * SCALE) + 'px';
+            cropImg.style.height = (naturalH * SCALE) + 'px';
+            offsetX = 0;
+            offsetY = 0;
+            setCropInputs(0, 0);
+            cropInner.style.left = '0px';
+            cropInner.style.top = '0px';
+            cropBox.style.cursor = 'default';
+            cropBox.onmousedown = null;
+            cropBox.ontouchstart = null;
+            if (cropHint) cropHint.textContent = 'Image is exactly 1280×400 px. It will be saved as-is.';
+        } else if (naturalW >= BANNER_W && naturalH >= BANNER_H) {
+            cropImg.style.width = (naturalW * SCALE) + 'px';
+            cropImg.style.height = (naturalH * SCALE) + 'px';
+            offsetX = -((naturalW * SCALE) - PREVIEW_W) / 2;
+            offsetY = -((naturalH * SCALE) - PREVIEW_H) / 2;
+            clampOffsets();
+            setupDrag();
+            if (cropHint) cropHint.textContent = 'Drag the image to choose the area to keep. The green box is fixed (1280×400). Excess will be cropped on save.';
+        } else {
+            var scaleFit = Math.min(BANNER_W / naturalW, BANNER_H / naturalH);
+            var scaledW = naturalW * scaleFit, scaledH = naturalH * scaleFit;
+            cropImg.style.width = (scaledW * SCALE) + 'px';
+            cropImg.style.height = (scaledH * SCALE) + 'px';
+            offsetX = (PREVIEW_W - scaledW * SCALE) / 2;
+            offsetY = (PREVIEW_H - scaledH * SCALE) / 2;
+            clampOffsetsSmall();
+            setupDrag();
+            setCropInputsFromOffset();
+            if (cropHint) cropHint.textContent = 'Image is smaller than 1280×400. Drag to position it; it will be placed on a 1280×400 banner on save.';
         }
+        cropWrap.style.display = 'block';
+    }
 
-        fileInput.addEventListener('change', function() {
-            var file = this.files[0];
-            if (sizeErrorEl) { sizeErrorEl.style.display = 'none'; sizeErrorEl.textContent = ''; }
-            if (!file || !file.type.match('image.*')) {
-                wrap.style.display = 'none';
-                previewImg.src = '';
-                return;
-            }
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.onload = function() {
-                    var w = previewImg.naturalWidth, h = previewImg.naturalHeight;
-                    if (w !== requiredWidth || h !== requiredHeight) {
-                        if (sizeErrorEl) {
-                            sizeErrorEl.textContent = 'Image must be exactly ' + requiredWidth + ' × ' + requiredHeight + ' px. This image is ' + w + ' × ' + h + ' px.';
-                            sizeErrorEl.style.display = 'block';
-                        }
-                        fileInput.classList.add('is-invalid');
-                        wrap.style.display = 'none';
-                        previewImg.src = '';
-                        fileInput.value = '';
-                        return;
-                    }
-                    fileInput.classList.remove('is-invalid');
-                    wrap.style.display = 'block';
-                };
-                previewImg.src = e.target.result;
-                if (previewImg.complete) previewImg.onload();
-            };
-            reader.readAsDataURL(file);
+    function setCropInputsFromOffset() {
+        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH);
+        var scaledW = imgNaturalW * scaleFit, scaledH = imgNaturalH * scaleFit;
+        var posX = Math.round(offsetX / SCALE);
+        var posY = Math.round(offsetY / SCALE);
+        setCropInputs(posX, posY);
+    }
+
+    function clampOffsetsSmall() {
+        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH);
+        var scaledPreviewW = imgNaturalW * scaleFit * SCALE, scaledPreviewH = imgNaturalH * scaleFit * SCALE;
+        var maxX = Math.max(0, PREVIEW_W - scaledPreviewW);
+        var maxY = Math.max(0, PREVIEW_H - scaledPreviewH);
+        offsetX = Math.max(0, Math.min(maxX, offsetX));
+        offsetY = Math.max(0, Math.min(maxY, offsetY));
+        cropInner.style.left = offsetX + 'px';
+        cropInner.style.top = offsetY + 'px';
+    }
+
+    var dropzone = document.getElementById('banner-create-dropzone');
+    if (dropzone) {
+        dropzone.addEventListener('click', function() { fileInput.click(); });
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('drag-over');
         });
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('drag-over');
+        });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('drag-over');
+            var files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length && files[0].type.match('image.*')) {
+                var dt = new DataTransfer();
+                dt.items.add(files[0]);
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    fileInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file || !file.type.match('image.*')) {
+            cropWrap.style.display = 'none';
+            cropImg.src = '';
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                showCropPreview(e.target.result, img.naturalWidth, img.naturalHeight);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     });
 })();
 </script>
