@@ -101,7 +101,10 @@ class Property extends Model
     // Relationship with PropertyPicture model
     public function pictures()
     {
-        return $this->hasMany(PropertyPicture::class);
+        return $this->hasMany(PropertyPicture::class)
+            ->orderByDesc('is_cover')
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
     public function category()
     {

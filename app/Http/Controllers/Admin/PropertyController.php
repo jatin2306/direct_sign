@@ -263,6 +263,11 @@ public function edit($id)
         'dld_permit_number' => 'nullable|string|max:255',
         'agent_license' => 'nullable|string|max:255',
         'regulatory_image' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:2048',
+        'picture_cover_id' => 'nullable|integer',
+        'picture_display_order' => 'nullable|array',
+        'picture_display_order.*' => 'nullable|integer|min:0',
+        'delete_picture_ids' => 'nullable|array',
+        'delete_picture_ids.*' => 'nullable|integer',
         // 'description' => 'required|string',
 
     ]);
@@ -288,19 +293,76 @@ public function edit($id)
     $property->amenities = $validated['amenities'] ?? [];
     $property->save();
 
-    
+    // Existing images management: order, cover, multi-delete
+    $existingPictureIds = $property->pictures()->pluck('id')->toArray();
+    $existingPictureIdsLookup = array_flip($existingPictureIds);
+
+    $deleteIds = collect($request->input('delete_picture_ids', []))
+        ->map(fn ($id) => (int) $id)
+        ->filter(fn ($id) => isset($existingPictureIdsLookup[$id]))
+        ->values();
+
+    if ($deleteIds->isNotEmpty()) {
+        $picturesToDelete = PropertyPicture::whereIn('id', $deleteIds)->get();
+        foreach ($picturesToDelete as $picture) {
+            if ($picture->path && Storage::disk('public')->exists($picture->path)) {
+                Storage::disk('public')->delete($picture->path);
+            } elseif ($picture->path && Storage::exists($picture->path)) {
+                Storage::delete($picture->path);
+            }
+            $picture->delete();
+        }
+    }
+
+    $remainingIds = $property->pictures()->pluck('id')->toArray();
+    $remainingIdsLookup = array_flip($remainingIds);
+
+    $requestedCoverId = (int) $request->input('picture_cover_id', 0);
+    $coverId = $requestedCoverId && isset($remainingIdsLookup[$requestedCoverId])
+        ? $requestedCoverId
+        : ($remainingIds[0] ?? null);
+
+    $requestedOrder = $request->input('picture_display_order', []);
+    if (is_array($requestedOrder)) {
+        foreach ($requestedOrder as $pictureId => $orderValue) {
+            $pictureId = (int) $pictureId;
+            if (!isset($remainingIdsLookup[$pictureId])) {
+                continue;
+            }
+            PropertyPicture::where('id', $pictureId)->update([
+                'display_order' => max(0, (int) $orderValue),
+                'is_cover' => $coverId ? ($pictureId === (int) $coverId) : false,
+            ]);
+        }
+    }
 
     // Handle new image uploads if any (encode in memory for faster save)
     if ($request->hasFile('pictures')) {
         $manager = new ImageManager(new Driver());
+        $nextDisplayOrder = ((int) PropertyPicture::where('property_id', $property->id)->max('display_order')) + 1;
         foreach ($request->file('pictures') as $picture) {
             $image = $manager->read($picture)->resize(800, 800);
             $filename = 'property_' . time() . '_' . uniqid() . '.jpg';
             $pathForDatabase = 'property_pictures/' . $filename;
             $encoded = $image->encode(new JpegEncoder(quality: 85));
             if (Storage::put($pathForDatabase, (string) $encoded) !== false) {
-                $property->pictures()->create(['path' => $pathForDatabase]);
+                $property->pictures()->create([
+                    'path' => $pathForDatabase,
+                    'display_order' => $nextDisplayOrder++,
+                    'is_cover' => false,
+                ]);
             }
+        }
+    }
+
+    // Ensure a cover always exists when at least one picture remains.
+    $finalPictures = $property->pictures()->get();
+    if ($finalPictures->isNotEmpty() && !$finalPictures->contains(fn ($pic) => (bool) $pic->is_cover)) {
+        $firstPicture = $finalPictures->sortBy('display_order')->first();
+        if ($firstPicture) {
+            PropertyPicture::where('property_id', $property->id)->update(['is_cover' => false]);
+            $firstPicture->is_cover = true;
+            $firstPicture->save();
         }
     }
 

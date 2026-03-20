@@ -549,6 +549,7 @@
   let dragStartX1 = 0;
   let dragEndX1 = 0;
   let autoSlideTimer;
+  let isManualNavPause1 = false;
 
   function updateBannerArrows() {
     if (buttonPrev1) {
@@ -593,7 +594,14 @@
 
   // Auto-rotate every 5 seconds (only if more than one slide)
   if (slideItems1.length > 1) {
+    function stopAutoSlideAfterManualNav() {
+      isManualNavPause1 = true;
+      clearInterval(autoSlideTimer);
+    }
+
     function startAutoSlide() {
+      if (isManualNavPause1) return;
+      clearInterval(autoSlideTimer);
       autoSlideTimer = setInterval(function() {
         showSlideAt1(currentIndex1 + 1);
       }, 5000);
@@ -604,6 +612,16 @@
       sliderTrack1.addEventListener('mouseenter', function() { clearInterval(autoSlideTimer); });
       sliderTrack1.addEventListener('mouseleave', startAutoSlide);
     }
+
+    if (buttonPrev1) {
+      buttonPrev1.addEventListener('click', stopAutoSlideAfterManualNav);
+    }
+    if (buttonNext1) {
+      buttonNext1.addEventListener('click', stopAutoSlideAfterManualNav);
+    }
+    navigationDots1.forEach(function(dot1) {
+      dot1.addEventListener('click', stopAutoSlideAfterManualNav);
+    });
   }
 
   // Drag / Swipe
@@ -612,13 +630,29 @@
     sliderTrack1.addEventListener('touchend', function(e) {
       dragEndX1 = e.changedTouches[0].clientX;
       var d = dragEndX1 - dragStartX1;
-      if (Math.abs(d) > 50) showSlideAt1(d > 0 ? currentIndex1 - 1 : currentIndex1 + 1);
+      if (Math.abs(d) > 50) {
+        showSlideAt1(d > 0 ? currentIndex1 - 1 : currentIndex1 + 1);
+        if (slideItems1.length > 1) {
+          clearInterval(autoSlideTimer);
+          autoSlideTimer = setInterval(function() {
+            showSlideAt1(currentIndex1 + 1);
+          }, 5000);
+        }
+      }
     });
     sliderTrack1.addEventListener('mousedown', function(e) { dragStartX1 = e.clientX; });
     sliderTrack1.addEventListener('mouseup', function(e) {
       dragEndX1 = e.clientX;
       var d = dragEndX1 - dragStartX1;
-      if (Math.abs(d) > 50) showSlideAt1(d > 0 ? currentIndex1 - 1 : currentIndex1 + 1);
+      if (Math.abs(d) > 50) {
+        showSlideAt1(d > 0 ? currentIndex1 - 1 : currentIndex1 + 1);
+        if (slideItems1.length > 1) {
+          clearInterval(autoSlideTimer);
+          autoSlideTimer = setInterval(function() {
+            showSlideAt1(currentIndex1 + 1);
+          }, 5000);
+        }
+      }
     });
   }
 })();

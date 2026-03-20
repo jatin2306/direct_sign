@@ -302,19 +302,25 @@
 
                                         <hr>
                                         <label class="form-label">Existing Property Images</label>
-                                        <div class="d-flex flex-wrap gap-3">
+                                        <p class="text-muted small mb-2">Drag cards to change display order. You can also set cover and multi-select delete.</p>
+                                        <div id="sortablePictureList" class="d-flex flex-wrap gap-3">
                                             @foreach ($property->pictures as $picture)
-                                                <div class="position-relative me-2 mb-2" style="display: inline-block; width: 120px;">
+                                                <div class="border rounded p-2 sortable-picture-card {{ $picture->is_cover ? 'is-cover-card' : '' }}" draggable="{{ $picture->is_cover ? 'false' : 'true' }}" data-picture-id="{{ $picture->id }}" style="width: 170px; cursor: {{ $picture->is_cover ? 'default' : 'grab' }};">
                                                     <img src="{{ asset('storage/' . $picture->path) }}"
                                                         alt="Property Image"
-                                                        style="width: 120px; height: 100px; object-fit: cover; border-radius: 8px;">
-
-                                                    <button type="button"
-                                                            class="delete-image-btn"
-                                                            data-id="{{ $picture->id }}"
-                                                            style="position: absolute; top: 5px; right: 5px; border: none; background: rgba(255, 0, 0, 0.7); color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 14px;">
-                                                        ×
-                                                    </button>
+                                                        style="width: 100%; height: 110px; object-fit: cover; border-radius: 6px;">
+                                                    <input type="hidden" class="picture-order-input" name="picture_display_order[{{ $picture->id }}]" value="{{ old('picture_display_order.' . $picture->id, $picture->display_order ?? 0) }}">
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input" type="radio" name="picture_cover_id" id="cover_{{ $picture->id }}" value="{{ $picture->id }}" {{ $picture->is_cover ? 'checked' : '' }}>
+                                                        <label class="form-check-label small" for="cover_{{ $picture->id }}">Mark as cover</label>
+                                                    </div>
+                                                    <div class="mt-2 small text-muted">
+                                                        {{ $picture->is_cover ? 'Cover image (fixed first)' : 'Drag to reorder' }}
+                                                    </div>
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input delete-picture-checkbox" type="checkbox" name="delete_picture_ids[]" id="delete_{{ $picture->id }}" value="{{ $picture->id }}">
+                                                        <label class="form-check-label text-danger small" for="delete_{{ $picture->id }}">Delete image</label>
+                                                    </div>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -457,6 +463,91 @@
     document.addEventListener('DOMContentLoaded', function() {
         var el = document.getElementById('edit-page-alert');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        var list = document.getElementById('sortablePictureList');
+        if (!list) return;
+
+        var draggedCard = null;
+
+        function syncPictureOrderInputs() {
+            var cards = list.querySelectorAll('.sortable-picture-card');
+            cards.forEach(function(card, index) {
+                var input = card.querySelector('.picture-order-input');
+                if (input) input.value = index;
+            });
+        }
+
+        function applyCoverCardRules() {
+            var coverRadio = list.querySelector('input[name="picture_cover_id"]:checked');
+            if (!coverRadio) return;
+            var coverCard = coverRadio.closest('.sortable-picture-card');
+            if (!coverCard) return;
+
+            if (list.firstElementChild !== coverCard) {
+                list.insertBefore(coverCard, list.firstElementChild);
+            }
+
+            list.querySelectorAll('.sortable-picture-card').forEach(function(card) {
+                var isCover = card === coverCard;
+                card.classList.toggle('is-cover-card', isCover);
+                card.setAttribute('draggable', isCover ? 'false' : 'true');
+                card.style.cursor = isCover ? 'default' : 'grab';
+
+                var hint = card.querySelector('.small.text-muted');
+                if (hint) {
+                    hint.textContent = isCover ? 'Cover image (fixed first)' : 'Drag to reorder';
+                }
+            });
+        }
+
+        list.querySelectorAll('.sortable-picture-card').forEach(function(card) {
+            card.addEventListener('dragstart', function() {
+                if (card.classList.contains('is-cover-card')) return;
+                draggedCard = card;
+                card.style.opacity = '0.6';
+            });
+
+            card.addEventListener('dragend', function() {
+                card.style.opacity = '1';
+                draggedCard = null;
+                syncPictureOrderInputs();
+            });
+
+            card.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+
+            card.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (!draggedCard || draggedCard === card) return;
+                if (card.classList.contains('is-cover-card')) {
+                    list.insertBefore(draggedCard, card.nextSibling);
+                    syncPictureOrderInputs();
+                    return;
+                }
+
+                var cards = Array.from(list.querySelectorAll('.sortable-picture-card'));
+                var draggedIndex = cards.indexOf(draggedCard);
+                var targetIndex = cards.indexOf(card);
+
+                if (draggedIndex < targetIndex) {
+                    list.insertBefore(draggedCard, card.nextSibling);
+                } else {
+                    list.insertBefore(draggedCard, card);
+                }
+                syncPictureOrderInputs();
+            });
+        });
+
+        list.querySelectorAll('input[name="picture_cover_id"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                applyCoverCardRules();
+                syncPictureOrderInputs();
+            });
+        });
+
+        applyCoverCardRules();
+        syncPictureOrderInputs();
     });
 </script>
 
