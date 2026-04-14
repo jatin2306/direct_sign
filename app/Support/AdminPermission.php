@@ -11,6 +11,7 @@ class AdminPermission
             'properties' => ['label' => 'Properties', 'actions' => ['view', 'create', 'edit', 'delete', 'verify']],
             'banners' => ['label' => 'Banners', 'actions' => ['view', 'create', 'edit', 'delete']],
             'carousels' => ['label' => 'Carousels', 'actions' => ['view', 'create', 'edit', 'delete']],
+            'home-cta' => ['label' => 'Home Sections', 'actions' => ['view', 'create', 'edit', 'delete']],
             'amenities' => ['label' => 'Amenities', 'actions' => ['view', 'create', 'edit', 'delete']],
             'transactions' => ['label' => 'Transactions', 'actions' => ['view', 'create', 'edit', 'delete']],
             'users' => ['label' => 'Users (front-end)', 'actions' => ['view', 'edit', 'delete', 'suspend']],

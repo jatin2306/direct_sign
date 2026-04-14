@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Banner;
 use App\Models\FeaturedSection;
+use App\Models\HomeCtaSection;
+use App\Models\HomeSalesSection;
+use App\Models\HomeVerifiedSection;
+use App\Models\HomeWhySection;
 use App\Models\Property;
 use App\Models\Category;
 use App\Models\ChildType;
@@ -64,6 +68,19 @@ class HomeController extends Controller
         ->with('images')
         ->orderBy('sort_order')
         ->orderBy('id')
+        ->first();
+
+    $homeCtaSection = HomeCtaSection::where('is_active', true)
+        ->latest('id')
+        ->first();
+    $homeVerifiedSection = HomeVerifiedSection::where('is_active', true)
+        ->latest('id')
+        ->first();
+    $homeWhySection = HomeWhySection::where('is_active', true)
+        ->latest('id')
+        ->first();
+    $homeSalesSection = HomeSalesSection::where('is_active', true)
+        ->latest('id')
         ->first();
 
 
@@ -134,6 +151,10 @@ class HomeController extends Controller
         'developersSection' => $developersSection,
         'developers' => $developers,
         'imageCarouselSection' => $imageCarouselSection,
+        'homeCtaSection' => $homeCtaSection,
+        'homeVerifiedSection' => $homeVerifiedSection,
+        'homeWhySection' => $homeWhySection,
+        'homeSalesSection' => $homeSalesSection,
         'properties' => $properties,
         'location' => $location,
         'propertyCounts' => $propertyCounts,

@@ -71,6 +71,14 @@ Route::prefix('admin')->middleware(['auth:admin', 'admin.permission'])->group(fu
     Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class)->names('admin.banners')->except(['show']);
 
     Route::resource('featured-sections', \App\Http\Controllers\Admin\FeaturedSectionController::class)->names('admin.featured-sections')->except(['show']);
+    Route::resource('home-cta-sections', \App\Http\Controllers\Admin\HomeCtaSectionController::class)->names('admin.home-cta-sections')->except(['show']);
+    Route::put('home-cta-sections/{id}/toggle-active', [\App\Http\Controllers\Admin\HomeCtaSectionController::class, 'toggleActive'])->name('admin.home-cta-sections.toggleActive');
+    Route::resource('home-verified-sections', \App\Http\Controllers\Admin\HomeVerifiedSectionController::class)->names('admin.home-verified-sections')->except(['index', 'show']);
+    Route::put('home-verified-sections/{id}/toggle-active', [\App\Http\Controllers\Admin\HomeVerifiedSectionController::class, 'toggleActive'])->name('admin.home-verified-sections.toggleActive');
+    Route::resource('home-why-sections', \App\Http\Controllers\Admin\HomeWhySectionController::class)->names('admin.home-why-sections')->except(['index', 'show']);
+    Route::put('home-why-sections/{id}/toggle-active', [\App\Http\Controllers\Admin\HomeWhySectionController::class, 'toggleActive'])->name('admin.home-why-sections.toggleActive');
+    Route::resource('home-sales-sections', \App\Http\Controllers\Admin\HomeSalesSectionController::class)->names('admin.home-sales-sections')->except(['index', 'show']);
+    Route::put('home-sales-sections/{id}/toggle-active', [\App\Http\Controllers\Admin\HomeSalesSectionController::class, 'toggleActive'])->name('admin.home-sales-sections.toggleActive');
 
     Route::resource('admin-users', \App\Http\Controllers\Admin\AdminUserController::class)->names('admin.admin-users')->except(['show']);
     Route::put('admin-users/{id}/toggle-active', [\App\Http\Controllers\Admin\AdminUserController::class, 'toggleActive'])->name('admin.admin-users.toggleActive');

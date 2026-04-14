@@ -1309,21 +1309,30 @@ document.addEventListener('click', () => {
 
 
 
-    <section class="py-4 mt-4" style="background:#e9f7f0;">
-        <div class="container text-center">
-            <h1 class="fw-bold" style="color:#26AE61;">
-                Buy, Sell & Rent Verified Properties in Dubai – Lowest Brokerage Fees
-            </h1>
-            <p class="mt-3 mb-4" style="color:#4A225B; font-size:18px;">
-                Be Direct, Be Intelligent — Dubai’s most transparent, RERA-licensed real estate platform.
-                No inflated commissions. No fake listings. Just verified, direct property deals.
-            </p>
-            <a href="{{ url('properties') }}" class="btn btn-primary me-2 focus-none">Search Verified Properties</a>
-            <a href="{{ route('add.listing') }}" class="btn btn-white border border-success mt-md-0" style="color:#26AE61;">
-                List Your Property Free
-            </a>
-        </div>
-    </section>
+    @if(!empty($homeCtaSection))
+        <section class="py-4 mt-4" style="background:{{ $homeCtaSection->background_color }};">
+            <div class="container text-center">
+                <h1 class="fw-bold" style="color:{{ $homeCtaSection->title_color }};">
+                    {{ $homeCtaSection->title }}
+                </h1>
+                @if(!empty($homeCtaSection->description))
+                    <p class="mt-3 mb-4" style="color:{{ $homeCtaSection->description_color }}; font-size:18px;">
+                        {!! nl2br(e($homeCtaSection->description)) !!}
+                    </p>
+                @endif
+                @if(!empty($homeCtaSection->primary_button_text) && !empty($homeCtaSection->primary_button_url))
+                    <a href="{{ $homeCtaSection->primary_button_url }}" class="btn btn-primary me-2 focus-none">
+                        {{ $homeCtaSection->primary_button_text }}
+                    </a>
+                @endif
+                @if(!empty($homeCtaSection->secondary_button_text) && !empty($homeCtaSection->secondary_button_url))
+                    <a href="{{ $homeCtaSection->secondary_button_url }}" class="btn btn-white border border-success mt-md-0" style="color:{{ $homeCtaSection->secondary_button_color }};">
+                        {{ $homeCtaSection->secondary_button_text }}
+                    </a>
+                @endif
+            </div>
+        </section>
+    @endif
 
 
     <!--=================================
@@ -1332,52 +1341,51 @@ document.addEventListener('click', () => {
     <!--=================================
         feature -->
 
+  @if(!empty($homeVerifiedSection))
         <section class="py-5 bg-white">
             <div class="container">
+                <h2 class="text-center mb-4" style="color:{{ $homeVerifiedSection->heading_color }};">
+                    {{ $homeVerifiedSection->heading }}
+                </h2>
+                @if(!empty($homeVerifiedSection->intro_text))
+                    <p class="text-center mb-5" style="color:{{ $homeVerifiedSection->text_color }};">
+                        {!! nl2br(e($homeVerifiedSection->intro_text)) !!}
+                    </p>
+                @endif
 
-                <h2 class="text-center mb-4" style="color:#26AE61;">100% Verified Listings – No Fake Ads, No Time Wasters</h2>
-                <p class="text-center mb-5" style="color:#4A225B;">
-                    Every property on Direct Deal UAE goes through strict verification:
-                </p>
+                @php
+                    $verifiedCards = is_array($homeVerifiedSection->cards ?? null) ? $homeVerifiedSection->cards : [];
+                    if (empty($verifiedCards)) {
+                        $verifiedCards = collect([
+                            ['title' => $homeVerifiedSection->item_1_title, 'description' => $homeVerifiedSection->item_1_description],
+                            ['title' => $homeVerifiedSection->item_2_title, 'description' => $homeVerifiedSection->item_2_description],
+                            ['title' => $homeVerifiedSection->item_3_title, 'description' => $homeVerifiedSection->item_3_description],
+                            ['title' => $homeVerifiedSection->item_4_title, 'description' => $homeVerifiedSection->item_4_description],
+                        ])->filter(function ($card) {
+                            return ! empty($card['title']) || ! empty($card['description']);
+                        })->values()->all();
+                    }
+                @endphp
 
-                <div class="row text-center">
-
-                    <div class="col-md-3 mb-4">
-                        <div class="p-4 shadow-sm rounded bg-light h-100">
-                            <h6 class="fw-bold text-dark">Ownership Documents Checked</h6>
-                            <p class="small text-muted">We ensure the property is legally owned by the advertiser.</p>
+                <div class="row text-center justify-content-center">
+                    @foreach($verifiedCards as $card)
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 d-flex">
+                            <div class="p-4 shadow-sm rounded bg-light h-100">
+                                <h6 class="fw-bold text-dark">{{ $card['title'] ?? '' }}</h6>
+                                <p class="small text-muted">{{ $card['description'] ?? '' }}</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="col-md-3 mb-4">
-                        <div class="p-4 shadow-sm rounded bg-light h-100">
-                            <h6 class="fw-bold text-dark">Landlord Identity Verified</h6>
-                            <p class="small text-muted">No fake agents. Only real owners and real landlords.</p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mb-4">
-                        <div class="p-4 shadow-sm rounded bg-light h-100">
-                            <h6 class="fw-bold text-dark">Property Details Validated</h6>
-                            <p class="small text-muted">Photos, size, location, and specs are inspected for accuracy.</p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mb-4">
-                        <div class="p-4 shadow-sm rounded bg-light h-100">
-                            <h6 class="fw-bold text-dark">In-Person Review When Needed</h6>
-                            <p class="small text-muted">We perform site visits when necessary to ensure authenticity.</p>
-                        </div>
-                    </div>
-
+                    @endforeach
                 </div>
 
-                <p class="text-center mt-4" style="color:#26AE61; font-weight:600;">
-                    No duplicates. No misleading ads. Only real, verified Dubai properties.
-                </p>
-
+                @if(!empty($homeVerifiedSection->footer_text))
+                    <p class="text-center mt-4" style="color:{{ $homeVerifiedSection->heading_color }}; font-weight:600;">
+                        {!! nl2br(e($homeVerifiedSection->footer_text)) !!}
+                    </p>
+                @endif
             </div>
         </section>
+    @endif
 
 
     <section class="space-ptb d-none">
@@ -1677,42 +1685,24 @@ Featured Properties-->
 Why Direct Deal -->
 
 
-<section class="py-5 mb-5" style="background:#f7fdfb;">
+@if(!empty($homeWhySection))
+<section class="py-5 mb-5" style="background:{{ $homeWhySection->background_color }};">
     <div class="container">
-
-        <h2 class="text-center mb-4" style="color:#26AE61;">Why Direct Deal UAE?</h2>
-
-        <div class="row">
-
-            <div class="col-md-4 mb-4">
-                <div class="p-4 shadow-sm bg-white rounded h-100">
-                    <h5 class="fw-bold text-dark">0% Commission for Owners & Landlords</h5>
-                    <p>No brokerage charged to sellers or landlords. Listing your property is completely free.</p>
+        <h2 class="text-center mb-4" style="color:{{ $homeWhySection->heading_color }};">{{ $homeWhySection->heading }}</h2>
+        @php $whyCards = is_array($homeWhySection->cards ?? null) ? $homeWhySection->cards : []; @endphp
+        <div class="row justify-content-center">
+            @foreach($whyCards as $card)
+                <div class="col-lg-4 col-md-6 mb-4 d-flex">
+                    <div class="p-4 shadow-sm bg-white rounded h-100 w-100">
+                        <h5 class="fw-bold text-dark">{{ $card['title'] ?? '' }}</h5>
+                        <p>{{ $card['description'] ?? '' }}</p>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div class="p-4 shadow-sm bg-white rounded h-100">
-                    <h5 class="fw-bold text-dark">Lowest Brokerage Fees in the UAE</h5>
-                    <p>
-                        Buyers pay only <strong>0.2% brokerage</strong> and tenants pay
-                        <strong>0.5% brokerage</strong>.
-                        Traditional brokers charge 2%–5%.
-                    </p>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div class="p-4 shadow-sm bg-white rounded h-100">
-                    <h5 class="fw-bold text-dark">Verified Owners, Buyers & Tenants</h5>
-                    <p>No fake leads or misleading ads. All users are identity-verified before connecting.</p>
-                </div>
-            </div>
-
+            @endforeach
         </div>
-
     </div>
 </section>
+@endif
 
 
 
@@ -1797,65 +1787,54 @@ document.addEventListener('DOMContentLoaded', function() {
      HOW DIRECT DEAL WORKS – SALES (Enhanced)
 ================================================-->
 
-<section class="py-5" style="background:#ffffff;">
+@if(!empty($homeSalesSection))
+<section class="py-5" style="background:{{ $homeSalesSection->section_background_color }};">
     <div class="container">
-
-        <h2 class="mb-4 text-center" style="color:#26AE61; font-weight:800; font-size:32px;">
-            How Direct Deal Works – <span style="color:#4A225B;">Property Sales</span>
+        <h2 class="mb-4 text-center" style="color:{{ $homeSalesSection->heading_color }}; font-weight:800; font-size:32px;">
+            {{ $homeSalesSection->heading }}
+            @if(!empty($homeSalesSection->heading_highlight))
+                <span style="color:{{ $homeSalesSection->heading_highlight_color }};">{{ $homeSalesSection->heading_highlight }}</span>
+            @endif
         </h2>
-
         <div class="row justify-content-center">
             <div class="col-lg-10">
-
-                <div class="p-4 rounded shadow-sm" style="background:#f7fdfb; border-left:6px solid #26AE61;">
+                <div class="p-4 rounded shadow-sm" style="background:{{ $homeSalesSection->box_background_color }}; border-left:6px solid {{ $homeSalesSection->box_border_color }};">
+                    @php $salesSteps = is_array($homeSalesSection->steps ?? null) ? $homeSalesSection->steps : []; @endphp
                     <ol class="ps-3" style="font-size:18px; line-height:1.9; color:#333; list-style: none;">
-                        
-                        <li class="mb-4">
-                            <strong style="color:#26AE61; font-size:20px;">
-                                1. Owner Lists Property (Free)
-                            </strong>
-                            <br>
-                            Upload photos & details — our team verifies ownership before going live.
-                        </li>
-
-                        <li class="mb-4">
-                            <strong style="color:#26AE61; font-size:20px;">
-                                2. Buyer Shows Interest
-                            </strong>
-                            <br>
-                            Buyer contacts through Direct Deal → we verify ID & financial capability.
-                        </li>
-
-                        <li class="mb-4">
-                            <strong style="color:#26AE61; font-size:20px;">
-                                3. Direct Connection & Secure Offer Exchange
-                            </strong>
-                            <br>
-                            Verified offers are shared safely. Direct Deal acts as a
-                            <strong>RERA-licensed brokerage</strong>, facilitating negotiations,
-                            contracts, and transaction completion.
-                        </li>
-
-
+                        @foreach($salesSteps as $index => $step)
+                            <li class="mb-4">
+                                <strong style="color:{{ $homeSalesSection->step_title_color }}; font-size:20px;">
+                                    {{ $index + 1 }}. {{ $step['title'] ?? '' }}
+                                </strong>
+                                <br>
+                                {{ $step['description'] ?? '' }}
+                            </li>
+                        @endforeach
                     </ol>
                 </div>
-
-                <div class="mt-4 text-center p-3 rounded" style="background:#ffffff;">
-                    <p class="text-dark mb-1 fw-bold" style="font-size:16px;">
-                        Buyers pay only <span style="color:#26AE61;">0.2% brokerage</span>
-                        — compared to the market standard of 2%.
-                    </p>
-                    <p class="small text-muted">
-                        This covers documentation, verification, contract A, B, F preparation and support until property transfer.
-                    </p>
-                </div>
-
-
+                @if(!empty($homeSalesSection->bottom_note) || !empty($homeSalesSection->bottom_note_subtext) || !empty($homeSalesSection->bottom_note_prefix) || !empty($homeSalesSection->bottom_note_highlight) || !empty($homeSalesSection->bottom_note_suffix))
+                    <div class="mt-4 text-center p-3 rounded" style="background:#ffffff;">
+                        @if(!empty($homeSalesSection->bottom_note_prefix) || !empty($homeSalesSection->bottom_note_highlight) || !empty($homeSalesSection->bottom_note_suffix))
+                            <p class="mb-1 fw-bold" style="font-size:16px; color:{{ $homeSalesSection->bottom_note_text_color ?: '#212529' }};">
+                                {{ $homeSalesSection->bottom_note_prefix }}
+                                <span style="color:{{ $homeSalesSection->bottom_note_highlight_color ?: '#26AE61' }};">
+                                    {{ $homeSalesSection->bottom_note_highlight }}
+                                </span>
+                                {{ $homeSalesSection->bottom_note_suffix }}
+                            </p>
+                        @elseif(!empty($homeSalesSection->bottom_note))
+                            <p class="mb-1 fw-bold" style="font-size:16px; color:{{ $homeSalesSection->bottom_note_text_color ?: '#212529' }};">{{ $homeSalesSection->bottom_note }}</p>
+                        @endif
+                        @if(!empty($homeSalesSection->bottom_note_subtext))
+                            <p class="small text-muted">{{ $homeSalesSection->bottom_note_subtext }}</p>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
-
     </div>
 </section>
+@endif
 
 
 <!--=====================================================

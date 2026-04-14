@@ -38,6 +38,14 @@
       </li>
       @endif
 
+      @if(admin_can('home-cta.view'))
+      <li class="nav-item mb-2">
+        <a class="nav-link text-white {{ request()->routeIs('admin.home-cta-sections.*') || request()->routeIs('admin.home-verified-sections.*') ? 'active bg-primary' : '' }}" href="{{ route('admin.home-cta-sections.index') }}">
+          <i class="fa fa-bullhorn me-2"></i> Home Sections
+        </a>
+      </li>
+      @endif
+
       @if(admin_can('amenities.view'))
       <li class="nav-item mb-2">
         <a class="nav-link text-white {{ request()->routeIs('admin.amenities.index') ? 'active bg-primary' : '' }}" href="{{ route('admin.amenities.index') }}">
