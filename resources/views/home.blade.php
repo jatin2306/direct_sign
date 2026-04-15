@@ -209,8 +209,6 @@
   .space-ptb .section-title h2 { font-size: 20px; }
   .space-ptb .testimonial-content p { font-size: 14px; }
   .col-md-6.mt-5.mt-md-0 { margin-top: 1.5rem !important; }
-  .whatsapp-float { bottom: 20px; left: 16px; width: 52px; height: 52px; }
-  .whatsapp-icon { width: 30px; height: 30px; }
 }
 
 .btn-outline-secondary:not(:disabled):not(.disabled):active,.btn-outline-secondary:focus {
@@ -238,12 +236,12 @@
                     <div class="slidee overlay" data-banner-style="{{ e($bannerDisplayStyle) }}">
                         <img class="banner-slide-img" src="{{ $bannerImgUrl }}" alt="">
                         <div class="content content--{{ $placement }}">
-                            @if($banner->sub_heading)<p>{{ $banner->sub_heading }}</p>@endif
+                            @if($banner->sub_heading)<p class="banner-subheading">{{ $banner->sub_heading }}</p>@endif
                             @if($banner->heading)<h3>{{ $banner->heading }}</h3>@endif
                             @if($banner->cta_text && $banner->cta_url)
-                                <a href="{{ $banner->cta_url }}" class="btn" style="position: relative; top: 30px;">{{ $banner->cta_text }}</a>
+                                <a href="{{ $banner->cta_url }}" class="btn banner-cta-btn">{{ $banner->cta_text }}</a>
                             @elseif($banner->cta_text)
-                                <a href="{{ route('add.listing') }}" class="btn" style="position: relative; top: 30px;">{{ $banner->cta_text }}</a>
+                                <a href="{{ route('add.listing') }}" class="btn banner-cta-btn">{{ $banner->cta_text }}</a>
                             @endif
                         </div>
                     </div>
@@ -403,22 +401,49 @@
     .content p {
         font-size: 16px;
         margin-bottom: 0;
-        color: #26AE61;
+        color: #ffffff;
     }
 
-    .content .btn {
+    .content .banner-subheading {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(38, 174, 97, 0.2);
+        border: 1px solid rgba(38, 174, 97, 0.45);
+        color: #dcffe9;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    .content .banner-cta-btn {
         display: inline-block;
         width: auto;
         max-width: 100%;
         background: #26AE61;
         color: #fff;
-        padding: 12px 20px;
-        border-radius: 6px;
-        font-weight: 400;
+        padding: 13px 24px;
+        margin-top: 18px;
+        border-radius: 999px;
+        font-weight: 600;
         text-decoration: none;
-        font-size: 14px;
+        font-size: 15px;
+        letter-spacing: 0.2px;
         white-space: nowrap;
         flex-shrink: 0;
+        box-shadow: 0 10px 24px rgba(38, 174, 97, 0.32);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .content .banner-cta-btn:hover {
+        background: #1f9553;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(38, 174, 97, 0.38);
+        text-decoration: none;
     }
 .content .freecard{display: block; font-size: 11px; line-height: 2;font-weight: bold;}
 
@@ -464,13 +489,15 @@
       .home-banner-section .slidee .content--right { margin-left: 16px !important; margin-right: 16px !important; }
       .home-banner-section .slidee .content h3 { font-size: 16px; line-height: 1.3; margin-bottom: 6px; }
       .home-banner-section .slidee .content p { font-size: 11px; line-height: 1.4; }
-      /* Banner CTA button: override inline top, fix sizing and touch target on mobile */
-      .home-banner-section .slidee .content .btn {
-        position: relative !important;
-        top: 0 !important;
+      .home-banner-section .slidee .content .banner-subheading {
+        margin-bottom: 8px;
+        padding: 4px 9px;
+        font-size: 10px;
+      }
+      .home-banner-section .slidee .content .banner-cta-btn {
         margin-top: 8px;
-        padding: 10px 16px;
-        font-size: 13px;
+        padding: 9px 14px;
+        font-size: 12px;
         min-height: 40px;
         min-width: 100px;
         max-width: 100%;
@@ -996,7 +1023,7 @@
     <div class="container">
         <div class="search-card">
 
-<form method="GET" action="{{ route('property.index') }}">
+<form method="GET" action="{{ route('property.index') }}" id="home-property-search-form">
 
     <div class="search-row">
 
@@ -1201,7 +1228,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <!-- SEARCH BUTTON -->
     <div class="search-action">
-        <button type="submit">
+        <button type="submit" id="home-search-submit-btn">
             <i class="fas fa-search"></i> Search Properties
         </button>
     </div>
@@ -1215,6 +1242,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const homeSearchForm = document.getElementById('home-property-search-form');
+    const homeSearchSubmitBtn = document.getElementById('home-search-submit-btn');
+    let isSearchSubmitting = false;
+
+    if (!homeSearchForm || !homeSearchSubmitBtn) {
+        return;
+    }
+
+    homeSearchForm.addEventListener('submit', function () {
+        if (isSearchSubmitting) {
+            return;
+        }
+
+        isSearchSubmitting = true;
+        homeSearchSubmitBtn.disabled = true;
+        homeSearchSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+
+        if (window.AppLoader && typeof window.AppLoader.show === 'function') {
+            window.AppLoader.show('Searching properties...');
+        }
+    });
+});
+
 document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
 
     const toggle = dropdown.querySelector('.dropdown-toggle');
@@ -2173,44 +2224,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </section>
 
 
-<!-- WhatsApp Floating Button -->
-<a
-  href="https://wa.me/971581144230?text=Hi%2C%20I%20just%20visited%20the%20DirectDealUAE%20website.%20Could%20you%20please%20share%20more%20details%3F"
-  class="whatsapp-float"
-  target="_blank"
-  rel="noopener noreferrer"
->
-  <img
-    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-    alt="WhatsApp Chat"
-    class="whatsapp-icon"
-  />
-</a>
-
 <style>
-.whatsapp-float {
-  position: fixed;
-  bottom: 25px;
-  left: 25px;
-  width: 60px;
-  height: 60px;
-  background-color: #25d366;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
-  text-decoration: none;
-}
-
-.whatsapp-icon {
-  width: 35px;
-  height: 35px;
-}
-.whatsapp-float:hover {
-  background-color: #1ebe5d;
-}
 .advance-dropdown-menu {
     position: absolute;
     top: 72px;

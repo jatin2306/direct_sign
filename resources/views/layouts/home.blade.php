@@ -109,7 +109,7 @@
 
 </head>
 
-<body>
+<body class="@yield('body_class')">
     <style>
         @media (min-width: 1400px) {
 
@@ -419,6 +419,13 @@
 </header>
 
 
+    <div id="global-page-loader" class="global-page-loader @if(trim($__env->yieldContent('show_page_loader')) !== '1') d-none @endif" aria-hidden="@if(trim($__env->yieldContent('show_page_loader')) !== '1') true @else false @endif">
+        <div class="global-page-loader__content" role="status" aria-live="polite">
+            <div class="global-page-loader__spinner"></div>
+            <p class="mb-0">Please wait, loading data...</p>
+        </div>
+    </div>
+
     <main class="page-main">
     @yield('content')
     </main>
@@ -521,6 +528,19 @@ footer-->
     <!--=================================
 footer-->
 
+    <div class="floating-quick-actions" aria-label="Quick actions">
+        <a href="{{ route('add.listing') }}" class="floating-post-property" data-loader>
+            Post Your Property
+        </a>
+        <a href="https://wa.me/971581144230?text=Hi%2C%20I%20just%20visited%20the%20DirectDealUAE%20website.%20Could%20you%20please%20share%20more%20details%3F"
+            class="floating-whatsapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat on WhatsApp">
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+        </a>
+    </div>
+
     <!--=================================
 Javascript -->
 
@@ -586,6 +606,166 @@ Javascript -->
     <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.umd.min.js"></script>
     <!-- Template Scripts (Do not remove)-->
     <script src="{{ asset('js/custom.js') }}"></script>
+    <style>
+        .floating-quick-actions {
+            position: fixed;
+            right: 18px;
+            bottom: 22px;
+            z-index: 10040;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .floating-post-property {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #26ae61;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+            border: 1px solid #e8f4ed;
+            white-space: nowrap;
+        }
+
+        .floating-post-property:hover {
+            color: #1f9553;
+            text-decoration: none;
+        }
+
+        .floating-whatsapp {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #25d366;
+            color: #fff !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+        }
+
+        .floating-whatsapp i {
+            font-size: 32px;
+            line-height: 1;
+            color: inherit !important;
+        }
+
+        .floating-whatsapp:hover,
+        .floating-whatsapp:focus,
+        .floating-whatsapp:active {
+            background: #1ebe5d;
+            color: #fff !important;
+            text-decoration: none;
+            outline: none;
+        }
+
+        @media (max-width: 767px) {
+            .floating-quick-actions {
+                right: 14px;
+                bottom: 16px;
+            }
+
+            .floating-post-property {
+                font-size: 13px;
+                padding: 9px 12px;
+            }
+
+            .floating-whatsapp {
+                width: 52px;
+                height: 52px;
+            }
+
+            .floating-whatsapp i {
+                font-size: 29px;
+            }
+        }
+
+        .global-page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .global-page-loader__content {
+            min-width: 280px;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .global-page-loader__spinner {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 14px;
+            border: 5px solid #d7f0e3;
+            border-top-color: #26ae61;
+            border-radius: 50%;
+            animation: globalLoaderSpin 0.8s linear infinite;
+        }
+
+        @keyframes globalLoaderSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        (function () {
+            const loader = document.getElementById('global-page-loader');
+            if (!loader) return;
+
+            function showGlobalLoader(message) {
+                const text = loader.querySelector('p');
+                if (text && message) {
+                    text.textContent = message;
+                }
+                loader.classList.remove('d-none');
+                loader.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function hideGlobalLoader() {
+                loader.classList.add('d-none');
+                loader.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            window.AppLoader = {
+                show: showGlobalLoader,
+                hide: hideGlobalLoader
+            };
+
+            document.addEventListener('click', function (event) {
+                const trigger = event.target.closest('[data-loader]');
+                if (!trigger) return;
+
+                const message = trigger.getAttribute('data-loader-message') || '';
+                showGlobalLoader(message);
+            });
+
+            window.addEventListener('pageshow', function () {
+                if (!loader.classList.contains('d-none')) {
+                    hideGlobalLoader();
+                }
+            });
+        })();
+    </script>
     <!-- JS Global Compulsory for Submit Property Blade(Do not remove)-->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7PU198Ir_uLOzaOK6hete5Rm5gDmWawI&libraries=places">
     </script>

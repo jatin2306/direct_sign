@@ -21,7 +21,8 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
 
-                <form method="POST"
+                <form id="add-listing-form"
+                      method="POST"
                       action="{{ route('add.listing.store') }}"
                       enctype="multipart/form-data"
                       class="p-4 bg-white shadow rounded">
@@ -29,6 +30,16 @@
                     @csrf
 
                     <h2 class="mb-4">List your property</h2>
+
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     {{-- LISTING TYPE --}}
                     <div class="mb-4">
@@ -180,10 +191,23 @@
                     <div class="mb-4">
                         <label class="fw-bold">Property Images</label>
                         <input type="file"
-                               class="form-control"
+                               class="form-control @if($errors->has('images') || $errors->has('images.*')) is-invalid @endif"
                                name="images[]"
                                multiple
                                accept="image/*">
+
+                        @if($errors->has('images') || $errors->has('images.*'))
+                            <div class="invalid-feedback d-block">
+                                @foreach ($errors->get('images') as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                                @foreach ($errors->get('images.*') as $fileErrors)
+                                    @foreach ((array) $fileErrors as $error)
+                                        <div>{{ $error }}</div>
+                                    @endforeach
+                                @endforeach
+                            </div>
+                        @endif
 
                         <small class="text-muted">
                             Max 10 images · 5MB each
@@ -194,7 +218,7 @@
 
                     {{-- SUBMIT --}}
                     <div class="text-end">
-                        <button type="submit" class="btn btn-success px-4">
+                        <button type="submit" class="btn btn-success px-4" id="submit-listing-btn">
                             Submit Listing
                         </button>
                     </div>
@@ -205,6 +229,13 @@
         </div>
     </div>
 </section>
+
+<div id="listing-submit-loader" class="listing-submit-loader d-none" aria-hidden="true">
+    <div class="listing-submit-loader__content" role="status" aria-live="polite">
+        <div class="listing-submit-loader__spinner"></div>
+        <p class="mb-0">Submitting your listing, please wait...</p>
+    </div>
+</div>
 
 {{-- STYLES --}}
 <style>
@@ -223,6 +254,43 @@ input#price_display::placeholder {
 .selectable.selected {
     background: #26ae61;
     color: #fff;
+}
+
+.listing-submit-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.listing-submit-loader__content {
+    min-width: 280px;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.listing-submit-loader__spinner {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    border: 5px solid #d7f0e3;
+    border-top-color: #26ae61;
+    border-radius: 50%;
+    animation: listingSpin 0.8s linear infinite;
+}
+
+@keyframes listingSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>
 
@@ -318,19 +386,27 @@ if (displayInput && hiddenInput) {
     });
 }
 
+const listingForm = document.getElementById('add-listing-form');
+const submitListingBtn = document.getElementById('submit-listing-btn');
+const listingLoader = document.getElementById('listing-submit-loader');
+let isListingSubmitting = false;
+
+if (listingForm && submitListingBtn && listingLoader) {
+    listingForm.addEventListener('submit', function () {
+        if (isListingSubmitting) {
+            return;
+        }
+
+        isListingSubmitting = true;
+        submitListingBtn.disabled = true;
+        submitListingBtn.innerHTML = 'Submitting...';
+        listingLoader.classList.remove('d-none');
+        listingLoader.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    });
+}
+
 </script>
-
-
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
 
 
 @endsection

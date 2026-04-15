@@ -93,19 +93,25 @@ class PropertyController extends Controller
             // Apply sorting logic
             switch ($sortOption) {
                 case 'price_asc':
-                    $properties->orderBy('price', 'asc');
+                    $properties->orderBy('price', 'asc')
+                        ->orderBy('id', 'desc');
                     break;
                 case 'price_desc':
-                    $properties->orderBy('price', 'desc');
+                    $properties->orderBy('price', 'desc')
+                        ->orderBy('id', 'desc');
                     break;
                 case 'date_asc':
-                    $properties->orderBy('created_at', 'asc');
+                    $properties->orderBy('created_at', 'asc')
+                        ->orderBy('id', 'asc');
                     break;
                 case 'date_desc':
-                    $properties->orderBy('created_at', 'desc');
+                    $properties->orderBy('created_at', 'desc')
+                        ->orderBy('id', 'desc');
                     break;
                 default:
-                    $properties->inRandomOrder(); // Mixed / random listings
+                    // Stable default sorting prevents repeated records across paginated pages.
+                    $properties->orderBy('created_at', 'desc')
+                        ->orderBy('id', 'desc');
                     break;
             }
 

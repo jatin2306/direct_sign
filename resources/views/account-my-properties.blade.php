@@ -1,4 +1,5 @@
 @extends('layouts.home')
+@section('show_page_loader', '1')
 
 @section('content')
     <!--=================================
@@ -185,17 +186,21 @@
                               @else
                                   <li class="page-item me-auto">
                                       <a class="page-link b-radius-none"
+                                          data-loader
+                                          data-loader-message="Loading your properties..."
                                           href="{{ $properties->previousPageUrl() }}">Prev</a>
                                   </li>
                               @endif
                               @foreach ($properties->getUrlRange(1, $properties->lastPage()) as $page => $url)
                                   <li class="page-item {{ $page == $properties->currentPage() ? 'active' : '' }}">
-                                      <a href="{{ $url }}" class="page-link">{{ $page }}</a>
+                                      <a href="{{ $url }}" class="page-link" data-loader data-loader-message="Loading your properties...">{{ $page }}</a>
                                   </li>
                               @endforeach
                               @if ($properties->hasMorePages())
                               <li class="page-item ms-auto">
                                 <a class="page-link b-radius-none"
+                                    data-loader
+                                    data-loader-message="Loading your properties..."
                                     href="{{ $properties->nextPageUrl() }}">Next</a>
                             </li>
                               @else
@@ -264,4 +269,42 @@
         .pagination .page-link { padding: 8px 12px; min-width: 44px; text-align: center; }
     }
     </style>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cards = document.querySelectorAll('[data-href]');
+
+        cards.forEach(function (card) {
+            card.addEventListener('click', function (event) {
+                if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                    return;
+                }
+
+                const targetUrl = card.getAttribute('data-href');
+                if (!targetUrl) return;
+
+                if (window.AppLoader && typeof window.AppLoader.show === 'function') {
+                    window.AppLoader.show('Opening property details...');
+                }
+
+                window.location.href = targetUrl;
+            });
+        });
+
+        document.querySelectorAll('form[id^="favorite-form-"]').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                if (window.AppLoader && typeof window.AppLoader.show === 'function') {
+                    window.AppLoader.show('Updating favorites...');
+                }
+            });
+        });
+    });
+
+    window.addEventListener('load', function () {
+        if (window.AppLoader && typeof window.AppLoader.hide === 'function') {
+            window.AppLoader.hide();
+        }
+    });
+</script>
+@endpush
 @endsection
