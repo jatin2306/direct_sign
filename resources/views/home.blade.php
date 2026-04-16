@@ -2774,8 +2774,16 @@ document.addEventListener('click', function(e) {
     }
 
     function buildSectionShareLinks() {
+        // Remove any previously injected share links (so Share appears only where allowed)
+        document.querySelectorAll('.section-share-anchor').forEach(function(el) {
+            el.remove();
+        });
+
         var usedIds = new Set(Array.from(document.querySelectorAll('[id]')).map(function(el) { return el.id; }));
-        var sections = document.querySelectorAll('section');
+        // Only allow Share links on admin-created carousel sections
+        var sections = document.querySelectorAll(
+            'section.featured-section-block, section.developers-section-block, section.image-carousel-section-block'
+        );
 
         sections.forEach(function(section, index) {
             if (section.classList.contains('d-none')) return;
