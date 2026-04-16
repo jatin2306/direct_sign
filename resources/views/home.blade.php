@@ -1525,6 +1525,23 @@ document.addEventListener('click', () => {
                                             <i class="fas fa-map-marker-alt me-1 text-primary"></i>
                                             <span>{{ $property->address }}</span>
                                         </p>
+                                        <div class="featured-card-price mb-2">
+                                            {{ number_format((float) $property->price) }} AED
+                                        </div>
+                                        <ul class="featured-card-meta list-unstyled d-flex text-center border-top pt-2 mt-2 mb-0 small">
+                                            <li class="flex-fill">
+                                                <i class="fas fa-bed featured-meta-icon" aria-hidden="true"></i>
+                                                <span class="featured-meta-text">{{ $property->bedrooms !== null && $property->bedrooms !== '' ? $property->bedrooms . ' Bedrooms' : 'N/A' }}</span>
+                                            </li>
+                                            <li class="flex-fill">
+                                                <i class="fas fa-bath featured-meta-icon" aria-hidden="true"></i>
+                                                <span class="featured-meta-text">{{ $property->bathrooms !== null && $property->bathrooms !== '' ? $property->bathrooms . ' Bathrooms' : 'N/A' }}</span>
+                                            </li>
+                                            <li class="flex-fill">
+                                                <i class="far fa-square featured-meta-icon" aria-hidden="true"></i>
+                                                <span class="featured-meta-text">{{ $property->builtArea ? $property->builtArea . ' sqft' : 'N/A' }}</span>
+                                            </li>
+                                        </ul>
                                     </div>
                                     <div class="property-btn">
                                         <a class="property-link btn btn-primary w-100"
@@ -2387,9 +2404,45 @@ document.addEventListener('click', function(e) {
 <style>
 .featured-section-block .featured-section-swiper-wrap { padding: 0; overflow: hidden; }
 .featured-section-block .featured-section-swiper { padding: 0 0 48px; position: relative; }
+.share-anchor-target {
+    scroll-margin-top: 110px;
+}
+.section-share-anchor {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid #d7e9dd;
+    background: #f8fffb;
+    color: #26ae61;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    vertical-align: middle;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.section-share-anchor:hover {
+    background: #26ae61;
+    border-color: #26ae61;
+    color: #fff;
+    text-decoration: none;
+}
+.section-share-anchor.copied {
+    background: #26ae61;
+    border-color: #26ae61;
+    color: #fff;
+}
 @media (max-width: 768px) {
   .featured-section-block .featured-section-swiper-wrap { padding: 0 0 40px; }
   .featured-section-block .section-title h2 { font-size: 20px; }
+  .section-share-anchor {
+      margin-left: 6px;
+      font-size: 11px;
+      padding: 3px 6px;
+  }
 }
 /* Dots at bottom – green theme */
 .featured-section-block .featured-section-pagination {
@@ -2412,6 +2465,58 @@ document.addEventListener('click', function(e) {
 /* Location: single line ellipsis so card height stays consistent */
 .featured-section-block .featured-card-address { min-height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .featured-section-block .featured-card-address span { display: inline; }
+.featured-section-block .featured-card-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #26ae61;
+}
+.featured-section-block .featured-card-meta {
+    gap: 0;
+    align-items: stretch;
+}
+.featured-section-block .featured-card-meta li {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 2px 6px;
+}
+.featured-section-block .featured-card-meta li + li {
+    border-left: 1px solid #eef1f3;
+}
+.featured-section-block .featured-meta-icon {
+    font-size: 16px;
+    color: #7b8794;
+    width: 18px;
+    text-align: center;
+    flex: 0 0 18px;
+}
+.featured-section-block .featured-card-meta li span {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: #6c757d;
+    line-height: 1.2;
+    font-weight: 500;
+}
+@media (max-width: 768px) {
+    .featured-section-block .featured-card-meta li {
+        gap: 3px;
+        padding: 2px 4px;
+    }
+    .featured-section-block .featured-meta-icon {
+        font-size: 14px;
+        width: 16px;
+        flex-basis: 16px;
+    }
+    .featured-section-block .featured-card-meta li span {
+        font-size: 11px;
+    }
+}
 
 /* Developers section – card design (logo + name + projects) */
 .developers-section-block .section-title { color: #333; font-weight: 700; }
@@ -2626,6 +2731,108 @@ document.addEventListener('click', function(e) {
         initFeaturedSwipers();
     }
     setTimeout(initFeaturedSwipers, 100);
+})();
+</script>
+<script>
+(function() {
+    function showCopiedState(linkEl) {
+        if (!linkEl) return;
+        var span = linkEl.querySelector('span');
+        if (!span) return;
+
+        var originalText = linkEl.getAttribute('data-original-text') || span.textContent;
+        linkEl.setAttribute('data-original-text', originalText);
+        span.textContent = 'Link Copied';
+        linkEl.classList.add('copied');
+
+        clearTimeout(linkEl.__copyTimer);
+        linkEl.__copyTimer = setTimeout(function() {
+            span.textContent = originalText;
+            linkEl.classList.remove('copied');
+        }, 1400);
+    }
+
+    function scrollToHashSection() {
+        if (!window.location.hash) return;
+        var id = window.location.hash.slice(1);
+        if (!id) return;
+
+        var section = document.getElementById(id);
+        if (!section) return;
+
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function slugifySectionTitle(text) {
+        return String(text || '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    function buildSectionShareLinks() {
+        var usedIds = new Set(Array.from(document.querySelectorAll('[id]')).map(function(el) { return el.id; }));
+        var sections = document.querySelectorAll('section');
+
+        sections.forEach(function(section, index) {
+            if (section.classList.contains('d-none')) return;
+
+            var heading = section.querySelector('.section-title h2, .section-title h1, h2, h1, h3');
+            if (!heading) return;
+            if (heading.querySelector('.section-share-anchor')) return;
+
+            if (!section.id) {
+                var baseId = slugifySectionTitle(heading.textContent) || ('section-' + (index + 1));
+                var finalId = baseId;
+                var counter = 2;
+                while (usedIds.has(finalId)) {
+                    finalId = baseId + '-' + counter++;
+                }
+                section.id = finalId;
+                usedIds.add(finalId);
+            }
+
+            section.classList.add('share-anchor-target');
+
+            var shareLink = document.createElement('a');
+            shareLink.className = 'section-share-anchor';
+            shareLink.href = '#' + section.id;
+            shareLink.setAttribute('aria-label', 'Share link to this section');
+            shareLink.innerHTML = '<i class="fas fa-link" aria-hidden="true"></i><span>Share</span>';
+
+            shareLink.addEventListener('click', function() {
+                var shareUrl = window.location.origin + window.location.pathname + window.location.search + '#' + section.id;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl)
+                        .then(function() {
+                            showCopiedState(shareLink);
+                        })
+                        .catch(function() {
+                            showCopiedState(shareLink);
+                        });
+                } else {
+                    showCopiedState(shareLink);
+                }
+            });
+
+            heading.appendChild(shareLink);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            buildSectionShareLinks();
+            setTimeout(scrollToHashSection, 0);
+        });
+    } else {
+        buildSectionShareLinks();
+        setTimeout(scrollToHashSection, 0);
+    }
+
+    window.addEventListener('hashchange', scrollToHashSection);
 })();
 </script>
 @endpush

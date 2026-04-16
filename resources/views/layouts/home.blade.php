@@ -123,6 +123,13 @@
             }
         }
 
+        /* Desktop default visual scale (similar to ~85% browser zoom) */
+        @media (min-width: 1200px) {
+            body {
+                zoom: 0.85;
+            }
+        }
+
         .property-search-field-top {
             z-index: 9;
             /* Lower than the header */

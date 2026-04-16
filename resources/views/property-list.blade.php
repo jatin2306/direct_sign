@@ -265,8 +265,9 @@
         flex-wrap: wrap;
     }
     .price-filter-inline .price-filter-input-wrap {
-        flex: 1;
-        min-width: 60px;
+        flex: 1 1 120px;
+        min-width: 120px;
+        transition: flex-basis 0.2s ease;
     }
     .price-filter-inline .price-filter-sep {
         color: #5a6c7d;
@@ -283,6 +284,9 @@
         width: 100%;
         transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         background: #fff;
+    }
+    .price-filter-block .form-control.price-filter-input.auto-resize-filter-input {
+        min-width: 100%;
     }
     .price-filter-input:hover {
         border-color: #26ae61;
@@ -488,13 +492,13 @@
                                         </h6>
                                         <div class="price-filter-inline">
                                             <div class="price-filter-input-wrap">
-                                                        <input type="text" inputmode="text" name="priceMin" id="filterPriceMin" class="form-control price-filter-input formatted-number"
+                                                        <input type="text" inputmode="text" name="priceMin" id="filterPriceMin" class="form-control price-filter-input formatted-number auto-resize-filter-input"
                                                     placeholder="e.g. 500,000 or 1.5M"
                                                     value="{{ $reqPriceMin !== null && $reqPriceMin !== '' ? $fmt($reqPriceMin) : '' }}">
                                             </div>
                                             <span class="price-filter-sep">–</span>
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="text" name="priceMax" id="filterPriceMax" class="form-control price-filter-input formatted-number"
+                                                <input type="text" inputmode="text" name="priceMax" id="filterPriceMax" class="form-control price-filter-input formatted-number auto-resize-filter-input"
                                                     placeholder="e.g. 2,000,000 or 2M"
                                                     value="{{ $reqPriceMax !== null && $reqPriceMax !== '' ? $fmt($reqPriceMax) : '' }}">
                                             </div>
@@ -509,13 +513,13 @@
                                         </h6>
                                         <div class="price-filter-inline">
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="text" name="areaMin" id="filterAreaMin" class="form-control price-filter-input formatted-number"
+                                                <input type="text" inputmode="text" name="areaMin" id="filterAreaMin" class="form-control price-filter-input formatted-number auto-resize-filter-input"
                                                     placeholder="e.g. 500 or 1,000"
                                                     value="{{ $reqAreaMin !== null && $reqAreaMin !== '' ? $fmt($reqAreaMin) : '' }}">
                                             </div>
                                             <span class="price-filter-sep">–</span>
                                             <div class="price-filter-input-wrap">
-                                                <input type="text" inputmode="text" name="areaMax" id="filterAreaMax" class="form-control price-filter-input formatted-number"
+                                                <input type="text" inputmode="text" name="areaMax" id="filterAreaMax" class="form-control price-filter-input formatted-number auto-resize-filter-input"
                                                     placeholder="e.g. 5,000"
                                                     value="{{ $reqAreaMax !== null && $reqAreaMax !== '' ? $fmt($reqAreaMax) : '' }}">
                                             </div>
@@ -570,6 +574,16 @@
                                 function setupFormattedNumberInput(id) {
                                     var input = document.getElementById(id);
                                     if (!input) return;
+                                    function updateInputFlexBasis(el) {
+                                        var wrap = el.closest('.price-filter-input-wrap');
+                                        if (!wrap) return;
+                                        var valueLength = (el.value || '').length;
+                                        var placeholderLength = Math.min((el.placeholder || '').length, 14);
+                                        var charCount = Math.max(valueLength, placeholderLength, 8);
+                                        var basis = Math.min(260, Math.max(120, (charCount * 9) + 28));
+                                        wrap.style.flexBasis = basis + 'px';
+                                    }
+
                                     input.addEventListener('input', function() {
                                         var start = this.selectionStart;
                                         var prevLen = this.value.length;
@@ -577,11 +591,14 @@
                                         this.value = raw ? formatInternational(raw) : '';
                                         var newStart = Math.max(0, Math.min(start, this.value.length));
                                         this.setSelectionRange(newStart, newStart);
+                                        updateInputFlexBasis(this);
                                     });
                                     input.addEventListener('blur', function() {
                                         var raw = toRawValue(this.value);
                                         if (raw) this.value = formatInternational(raw);
+                                        updateInputFlexBasis(this);
                                     });
+                                    updateInputFlexBasis(input);
                                 }
                                 function getFormSnapshot(form) {
                                     var fd = new FormData(form);

@@ -68,6 +68,11 @@
                 </div>
                 <div class="col-12" id="banner-create-crop-wrap" style="display: none;">
                     <label class="form-label">Crop preview <span class="text-muted">(fixed 1280×400 – drag image to position)</span></label>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="banner-create-zoom-out">-</button>
+                        <span class="small text-muted">Zoom: <strong id="banner-create-zoom-value">100%</strong></span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="banner-create-zoom-in">+</button>
+                    </div>
                     <div class="banner-crop-box" id="banner-create-crop-box">
                         <div class="banner-crop-inner" id="banner-create-crop-inner">
                             <img id="banner-create-crop-img" src="" alt="">
@@ -76,6 +81,7 @@
                     <p id="banner-create-crop-hint" class="small text-muted mt-1 mb-0"></p>
                     <input type="hidden" name="crop_x" id="banner-create-crop-x" value="">
                     <input type="hidden" name="crop_y" id="banner-create-crop-y" value="">
+                    <input type="hidden" name="crop_zoom" id="banner-create-crop-zoom" value="1">
                 </div>
                 <div class="col-md-4">
                     <label for="sort_order" class="form-label">Sort order</label>
@@ -152,6 +158,10 @@
     var cropHint = document.getElementById('banner-create-crop-hint');
     var inputCropX = document.getElementById('banner-create-crop-x');
     var inputCropY = document.getElementById('banner-create-crop-y');
+    var inputCropZoom = document.getElementById('banner-create-crop-zoom');
+    var zoomInBtn = document.getElementById('banner-create-zoom-in');
+    var zoomOutBtn = document.getElementById('banner-create-zoom-out');
+    var zoomValue = document.getElementById('banner-create-zoom-value');
 
     if (!fileInput || !cropWrap || !cropBox || !cropInner || !cropImg) return;
 
@@ -159,6 +169,9 @@
     var offsetX = 0, offsetY = 0;
     var dragStartX, dragStartY, startOffsetX, startOffsetY;
     var isSmallImage = false;
+    var zoom = 1;
+    var MIN_ZOOM = 1;
+    var MAX_ZOOM = 3;
 
     function setCropInputs(x, y) {
         if (inputCropX) inputCropX.value = Math.round(x);
@@ -166,16 +179,41 @@
     }
 
     function clampOffsets() {
-        var scaledW = imgNaturalW * SCALE, scaledH = imgNaturalH * SCALE;
+        var scaledW = imgNaturalW * SCALE * zoom, scaledH = imgNaturalH * SCALE * zoom;
         var maxX = Math.max(0, scaledW - PREVIEW_W);
         var maxY = Math.max(0, scaledH - PREVIEW_H);
         offsetX = Math.max(-maxX, Math.min(0, offsetX));
         offsetY = Math.max(-maxY, Math.min(0, offsetY));
         cropInner.style.left = offsetX + 'px';
         cropInner.style.top = offsetY + 'px';
-        var cropX = Math.round(-offsetX / SCALE);
-        var cropY = Math.round(-offsetY / SCALE);
+        var cropX = Math.round(-offsetX / (SCALE * zoom));
+        var cropY = Math.round(-offsetY / (SCALE * zoom));
         setCropInputs(cropX, cropY);
+    }
+
+    function updateZoomUI() {
+        if (zoomValue) zoomValue.textContent = Math.round(zoom * 100) + '%';
+        if (inputCropZoom) inputCropZoom.value = zoom.toFixed(2);
+        if (zoomOutBtn) zoomOutBtn.disabled = zoom <= MIN_ZOOM;
+        if (zoomInBtn) zoomInBtn.disabled = zoom >= MAX_ZOOM;
+    }
+
+    function renderCropImage() {
+        if (!imgNaturalW || !imgNaturalH) return;
+        if (isSmallImage) {
+            var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH) * zoom;
+            var scaledW = imgNaturalW * scaleFit;
+            var scaledH = imgNaturalH * scaleFit;
+            cropImg.style.width = (scaledW * SCALE) + 'px';
+            cropImg.style.height = (scaledH * SCALE) + 'px';
+            clampOffsetsSmall();
+            setCropInputsFromOffset();
+        } else {
+            cropImg.style.width = (imgNaturalW * SCALE * zoom) + 'px';
+            cropImg.style.height = (imgNaturalH * SCALE * zoom) + 'px';
+            clampOffsets();
+        }
+        updateZoomUI();
     }
 
     function setupDrag() {
@@ -225,42 +263,28 @@
 
         isSmallImage = (naturalW < BANNER_W || naturalH < BANNER_H);
         if (naturalW === BANNER_W && naturalH === BANNER_H) {
-            cropImg.style.width = (naturalW * SCALE) + 'px';
-            cropImg.style.height = (naturalH * SCALE) + 'px';
             offsetX = 0;
             offsetY = 0;
-            setCropInputs(0, 0);
-            cropInner.style.left = '0px';
-            cropInner.style.top = '0px';
-            cropBox.style.cursor = 'default';
-            cropBox.onmousedown = null;
-            cropBox.ontouchstart = null;
-            if (cropHint) cropHint.textContent = 'Image is exactly 1280×400 px. It will be saved as-is.';
+            if (cropHint) cropHint.textContent = 'Drag to position and use +/- to zoom.';
         } else if (naturalW >= BANNER_W && naturalH >= BANNER_H) {
-            cropImg.style.width = (naturalW * SCALE) + 'px';
-            cropImg.style.height = (naturalH * SCALE) + 'px';
             offsetX = -((naturalW * SCALE) - PREVIEW_W) / 2;
             offsetY = -((naturalH * SCALE) - PREVIEW_H) / 2;
-            clampOffsets();
             setupDrag();
-            if (cropHint) cropHint.textContent = 'Drag the image to choose the area to keep. The green box is fixed (1280×400). Excess will be cropped on save.';
+            if (cropHint) cropHint.textContent = 'Drag to reposition and use +/- to zoom.';
         } else {
             var scaleFit = Math.min(BANNER_W / naturalW, BANNER_H / naturalH);
             var scaledW = naturalW * scaleFit, scaledH = naturalH * scaleFit;
-            cropImg.style.width = (scaledW * SCALE) + 'px';
-            cropImg.style.height = (scaledH * SCALE) + 'px';
             offsetX = (PREVIEW_W - scaledW * SCALE) / 2;
             offsetY = (PREVIEW_H - scaledH * SCALE) / 2;
-            clampOffsetsSmall();
             setupDrag();
-            setCropInputsFromOffset();
-            if (cropHint) cropHint.textContent = 'Image is smaller than 1280×400. Drag to position it; it will be placed on a 1280×400 banner on save.';
+            if (cropHint) cropHint.textContent = 'Image is smaller than 1280×400. Drag to position and use +/- to zoom.';
         }
+        renderCropImage();
         cropWrap.style.display = 'block';
     }
 
     function setCropInputsFromOffset() {
-        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH);
+        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH) * zoom;
         var scaledW = imgNaturalW * scaleFit, scaledH = imgNaturalH * scaleFit;
         var posX = Math.round(offsetX / SCALE);
         var posY = Math.round(offsetY / SCALE);
@@ -268,7 +292,7 @@
     }
 
     function clampOffsetsSmall() {
-        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH);
+        var scaleFit = Math.min(BANNER_W / imgNaturalW, BANNER_H / imgNaturalH) * zoom;
         var scaledPreviewW = imgNaturalW * scaleFit * SCALE, scaledPreviewH = imgNaturalH * scaleFit * SCALE;
         var maxX = Math.max(0, PREVIEW_W - scaledPreviewW);
         var maxY = Math.max(0, PREVIEW_H - scaledPreviewH);
@@ -279,6 +303,20 @@
     }
 
     var dropzone = document.getElementById('banner-create-dropzone');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function() {
+            zoom = Math.min(MAX_ZOOM, +(zoom + 0.1).toFixed(2));
+            renderCropImage();
+        });
+    }
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function() {
+            zoom = Math.max(MIN_ZOOM, +(zoom - 0.1).toFixed(2));
+            renderCropImage();
+        });
+    }
+    updateZoomUI();
+
     if (dropzone) {
         dropzone.addEventListener('click', function() { fileInput.click(); });
         dropzone.addEventListener('dragover', function(e) {
@@ -312,6 +350,8 @@
             cropImg.src = '';
             return;
         }
+        zoom = 1;
+        updateZoomUI();
         var reader = new FileReader();
         reader.onload = function(e) {
             var img = new Image();

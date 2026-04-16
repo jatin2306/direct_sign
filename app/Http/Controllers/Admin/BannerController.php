@@ -46,6 +46,7 @@ class BannerController extends Controller
             'image'           => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
             'crop_x'          => 'nullable|integer|min:0',
             'crop_y'          => 'nullable|integer|min:0',
+            'crop_zoom'       => 'nullable|numeric|min:1|max:3',
             'image_display'   => 'nullable|string',
             'text_placement'  => 'nullable|string|in:left,right,center',
             'sort_order'      => 'nullable|integer|min:0',
@@ -62,7 +63,12 @@ class BannerController extends Controller
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $validated['image'] = $this->processBannerImage($file, $request->input('crop_x'), $request->input('crop_y'));
+            $validated['image'] = $this->processBannerImage(
+                $file,
+                $request->input('crop_x'),
+                $request->input('crop_y'),
+                $request->input('crop_zoom')
+            );
         }
 
         if (! empty($validated['image_display'])) {
@@ -76,7 +82,7 @@ class BannerController extends Controller
             $validated['cta_url'] = html_entity_decode($validated['cta_url'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
-        unset($validated['crop_x'], $validated['crop_y']);
+        unset($validated['crop_x'], $validated['crop_y'], $validated['crop_zoom']);
         Banner::create($validated);
         return redirect()->route('admin.banners.index')->with('success', 'Banner added.');
     }
@@ -85,7 +91,7 @@ class BannerController extends Controller
      * Save banner image: exact 1280×400 as-is; larger images cropped from (crop_x, crop_y); smaller as-is.
      * Returns relative path like 'banners/xxx.jpg'.
      */
-    private function processBannerImage($file, $cropX, $cropY): string
+    private function processBannerImage($file, $cropX, $cropY, $cropZoom = null): string
     {
         $dimensions = @getimagesize($file->getPathname());
         $width = $dimensions[0] ?? 0;
@@ -98,8 +104,25 @@ class BannerController extends Controller
         $name = Str::random(40) . '.' . $ext;
         $destPath = $this->bannerStoragePath() . '/' . $name;
 
+        $zoom = is_numeric($cropZoom) ? (float) $cropZoom : 1.0;
+        $zoom = max(1.0, min(3.0, $zoom));
+
         if ($width === self::BANNER_WIDTH && $height === self::BANNER_HEIGHT) {
-            $file->move($this->bannerStoragePath(), $name);
+            if ($zoom <= 1.0) {
+                $file->move($this->bannerStoragePath(), $name);
+                return 'banners/' . $name;
+            }
+
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getPathname());
+            $cropW = (int) round(self::BANNER_WIDTH / $zoom);
+            $cropH = (int) round(self::BANNER_HEIGHT / $zoom);
+            $x = (int) floor((self::BANNER_WIDTH - $cropW) / 2);
+            $y = (int) floor((self::BANNER_HEIGHT - $cropH) / 2);
+            $image->crop($cropW, $cropH, $x, $y);
+            $image->resize(self::BANNER_WIDTH, self::BANNER_HEIGHT);
+            $encoded = $image->encode(new JpegEncoder(quality: 90));
+            File::put($destPath, (string) $encoded);
             return 'banners/' . $name;
         }
 
@@ -107,16 +130,24 @@ class BannerController extends Controller
         $image = $manager->read($file->getPathname());
 
         if ($width >= self::BANNER_WIDTH && $height >= self::BANNER_HEIGHT) {
+            $cropW = (int) round(self::BANNER_WIDTH / $zoom);
+            $cropH = (int) round(self::BANNER_HEIGHT / $zoom);
+            $cropW = max(1, min($width, $cropW));
+            $cropH = max(1, min($height, $cropH));
+
             $x = 0;
             $y = 0;
             if (is_numeric($cropX) && is_numeric($cropY)) {
-                $x = max(0, min($width - self::BANNER_WIDTH, (int) $cropX));
-                $y = max(0, min($height - self::BANNER_HEIGHT, (int) $cropY));
+                $x = max(0, min($width - $cropW, (int) $cropX));
+                $y = max(0, min($height - $cropH, (int) $cropY));
             } else {
-                $x = (int) floor(($width - self::BANNER_WIDTH) / 2);
-                $y = (int) floor(($height - self::BANNER_HEIGHT) / 2);
+                $x = (int) floor(($width - $cropW) / 2);
+                $y = (int) floor(($height - $cropH) / 2);
             }
-            $image->crop(self::BANNER_WIDTH, self::BANNER_HEIGHT, $x, $y);
+            $image->crop($cropW, $cropH, $x, $y);
+            if ($cropW !== self::BANNER_WIDTH || $cropH !== self::BANNER_HEIGHT) {
+                $image->resize(self::BANNER_WIDTH, self::BANNER_HEIGHT);
+            }
             $encoded = $image->encode(new JpegEncoder(quality: 90));
             File::put($destPath, (string) $encoded);
             return 'banners/' . $name;
@@ -125,6 +156,7 @@ class BannerController extends Controller
         if ($width < self::BANNER_WIDTH || $height < self::BANNER_HEIGHT) {
             // Small image: scale to fit inside 1280×400, place on canvas at (crop_x, crop_y)
             $scaleFit = min(self::BANNER_WIDTH / $width, self::BANNER_HEIGHT / $height);
+            $scaleFit *= $zoom;
             $scaledW = (int) round($width * $scaleFit);
             $scaledH = (int) round($height * $scaleFit);
             $image->resize($scaledW, $scaledH);
@@ -172,6 +204,7 @@ class BannerController extends Controller
             'image'           => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
             'crop_x'          => 'nullable|integer|min:0',
             'crop_y'          => 'nullable|integer|min:0',
+            'crop_zoom'       => 'nullable|numeric|min:1|max:3',
             'image_display'   => 'nullable|string',
             'text_placement'  => 'nullable|string|in:left,right,center',
             'sort_order'      => 'nullable|integer|min:0',
@@ -194,11 +227,16 @@ class BannerController extends Controller
                 }
             }
             $file = $request->file('image');
-            $validated['image'] = $this->processBannerImage($file, $request->input('crop_x'), $request->input('crop_y'));
+            $validated['image'] = $this->processBannerImage(
+                $file,
+                $request->input('crop_x'),
+                $request->input('crop_y'),
+                $request->input('crop_zoom')
+            );
         } else {
             unset($validated['image']);
         }
-        unset($validated['crop_x'], $validated['crop_y']);
+        unset($validated['crop_x'], $validated['crop_y'], $validated['crop_zoom']);
 
         if (array_key_exists('image_display', $validated)) {
             if (! empty($validated['image_display'])) {

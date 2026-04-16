@@ -298,6 +298,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Upload Property Images</label>
                                         <input type="file" name="pictures[]" id="imageUpload" class="form-control" multiple>
+                                        <small class="text-muted d-block mt-1">You can upload up to 20 images.</small>
                                         <div id="imagePreview" class="d-flex flex-wrap mt-3 gap-3"></div>
 
                                         <hr>
